@@ -1,0 +1,36 @@
+{
+  "name": "invoicing-system",
+  "version": "1.0.0",
+  "description": "MERN Stack Invoicing System",
+  "scripts": {
+    "start": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd server && npm start",
+    "client": "cd client && npm start",
+    "dev": "concurrently \"npm run server:dev\" \"npm run client\"",
+    "server:dev": "cd server && npm run dev",
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install",
+    "build": "cd client && npm run build"
+  },
+  "keywords": [
+    "invoicing",
+    "mern",
+    "react",
+    "node",
+    "express",
+    "mongodb"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Shifa1002/Invoicing-System.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Shifa1002/Invoicing-System/issues"
+  },
+  "homepage": "https://github.com/Shifa1002/Invoicing-System#readme"
+}
