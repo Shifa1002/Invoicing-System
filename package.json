@@ -32,5 +32,8 @@
   "bugs": {
     "url": "https://github.com/Shifa1002/Invoicing-System/issues"
   },
-  "homepage": "https://github.com/Shifa1002/Invoicing-System#readme"
+  "homepage": "https://github.com/Shifa1002/Invoicing-System#readme",
+  "dependencies": {
+    "json2csv": "^6.0.0-alpha.2"
+  }
 }

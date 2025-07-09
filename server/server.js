@@ -10,7 +10,7 @@ import morgan from 'morgan';
 import helmet from 'helmet';
 import compression from 'compression';
 import { dirname, join } from 'path';
-import { auth } from './middleware/auth.js';
+import auth from './middleware/auth.js';
 import productRoutes from './routes/productRoutes.js';
 import clientRoutes from './routes/clientsRoutes.js';
 import contractRoutes from './routes/contractRoutes.js';

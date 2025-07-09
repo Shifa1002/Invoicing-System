@@ -1,5 +1,5 @@
 import express from 'express';
-import { auth } from '../middleware/auth.js';
+import auth from '../middleware/auth.js';
 import Invoice from '../models/Invoice.js';
 import Client from '../models/Client.js';
 import Contract from '../models/Contract.js';

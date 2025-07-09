@@ -8,7 +8,6 @@ A full-stack MERN (MongoDB, Express.js, React.js, Node.js) application for manag
 - CRUD operations for invoices, clients, products, and contracts
 - Real-time dashboard with statistics and charts
 - PDF invoice generation and download
-- Email notifications
 - API documentation with Swagger
 - Rate limiting and security features
 - File upload for company logo
@@ -83,7 +82,7 @@ invoicing-system/
 
 7. Access the application:
    - Frontend: http://localhost:3000
-   - Backend API: http://localhost:5000/api/
+   - Backend API: http://localhost:5000/api
    - API Documentation: http://localhost:5000/api-docs
 
 ## API Documentation

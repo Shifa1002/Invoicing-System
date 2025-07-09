@@ -38,6 +38,7 @@ export const authLimiter = rateLimit({
 });
 
 // Password reset limiter
+console.log('redis uri', process.env.REDIS_URI)
 export const passwordResetLimiter = rateLimit({
   store: new RedisStore({
     client: redisClient,
@@ -47,10 +48,10 @@ export const passwordResetLimiter = rateLimit({
   max: 3, // Limit each IP to 3 requests per windowMs
   message: {
     success: false,
-    error: 'Too many password reset attempts, please try again after an hour'
-  },
+    error: 'Too many password reset attempts, please try again after sometime'  },
   standardHeaders: true,
   legacyHeaders: false
+  
 });
 
 // Invoice creation limiter

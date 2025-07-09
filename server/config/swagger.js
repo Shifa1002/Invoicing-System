@@ -15,7 +15,7 @@ const options = {
     },
     servers: [
       {
-        url: process.env.API_URL || 'http://localhost:5000/api-docs/#/',
+        url: process.env.API_URL || 'http://localhost:5000/api',
         description: 'Development server'
       }
     ],

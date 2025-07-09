@@ -1,0 +1,12 @@
+name: Local Assistant
+version: 1.0.0
+schema: v1
+
+models:
+  - title: "Code Llama"
+    provider: "ollama"
+    model: "codellama"
+
+context:
+  - provider: "code"
+  - provider: "folder"

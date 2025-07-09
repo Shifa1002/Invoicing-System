@@ -1,12 +1,12 @@
 import express from 'express';
-import { auth } from '../middleware/auth.js';
+import auth from '../middleware/auth.js';
 import { generateInvoice, getInvoicePdf } from '../controllers/invoiceController.js';
 import Invoice from '../models/Invoice.js';
 
 const router = express.Router();
 
 // Get all invoices
-router.get('/', async (req, res) => {
+router.get('/', auth, async (req, res) => {
   try {
     const invoices = await Invoice.find({ active: true })
       .populate('client', 'name company')
@@ -20,7 +20,7 @@ router.get('/', async (req, res) => {
 });
 
 // Get a single invoice
-router.get('/:id', async (req, res) => {
+router.get('/:id', auth, async (req, res) => {
   try {
     const invoice = await Invoice.findById(req.params.id)
       .populate('client', 'name company email phone address taxId')
@@ -36,7 +36,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Update invoice status
-router.patch('/:id/status', async (req, res) => {
+router.patch('/:id/status', auth, async (req, res) => {
   try {
     const invoice = await Invoice.findById(req.params.id);
     if (!invoice) {
@@ -62,7 +62,7 @@ router.patch('/:id/status', async (req, res) => {
 });
 
 // Update invoice
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', auth, async (req, res) => {
   try {
     const invoice = await Invoice.findById(req.params.id);
     if (!invoice) {
@@ -95,7 +95,7 @@ router.patch('/:id', async (req, res) => {
 });
 
 // Delete invoice (soft delete)
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', auth, async (req, res) => {
   try {
     const invoice = await Invoice.findById(req.params.id);
     if (!invoice) {
@@ -111,9 +111,9 @@ router.delete('/:id', async (req, res) => {
 });
 
 // Generate invoice
-router.post('/generate', generateInvoice);
+router.post('/generate', auth, generateInvoice);
 
 // Get invoice PDF
-router.get('/:id/pdf', getInvoicePdf);
+router.get('/:id/pdf', auth, getInvoicePdf);
 
 export default router; 

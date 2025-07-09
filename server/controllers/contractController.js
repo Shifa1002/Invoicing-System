@@ -1,127 +1,79 @@
 import Contract from '../models/Contract.js';
+import { exportToCSV } from '../services/csvService.js';
+import PDFService from '../services/pdfService.js';
+import mongoose from 'mongoose';
+import fs from 'fs';
 
-/**
- * @swagger
- * /api/contracts:
- *   get:
- *     summary: Get all contracts
- *     tags: [Contracts]
- *     responses:
- *       200:
- *         description: List of contracts
- */
+// Get all contracts
 export const getContracts = async (req, res) => {
   try {
-    const contracts = await Contract.find().populate('client');
-    res.json(contracts);
+    const contracts = await Contract.find().populate('client', 'name email');
+    res.status(200).json(contracts);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-/**
- * @swagger
- * /api/contracts:
- *   post:
- *     summary: Create a new contract
- *     tags: [Contracts]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - client
- *               - title
- *               - startDate
- *               - endDate
- *               - terms
- *               - totalAmount
- *               - paymentTerms
- *             properties:
- *               client:
- *                 type: string
- *                 description: Client ID
- *               title:
- *                 type: string
- *               description:
- *                 type: string
- *               startDate:
- *                 type: string
- *                 format: date
- *               endDate:
- *                 type: string
- *                 format: date
- *               terms:
- *                 type: string
- *               totalAmount:
- *                 type: number
- *               paymentTerms:
- *                 type: string
- */
-export const createContract = async (req, res) => {
-  const contract = new Contract(req.body);
+// Get contract by ID
+export const getContractById = async (req, res) => {
   try {
-    const newContract = await contract.save();
-    const populatedContract = await Contract.findById(newContract._id).populate('client');
-    res.status(201).json(populatedContract);
+    const contract = await Contract.findById(req.params.id).populate('client', 'name email');
+    if (!contract) return res.status(404).json({ message: 'Contract not found' });
+    res.status(200).json(contract);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Create contract
+export const createContract = async (req, res) => {
+  try {
+    const contract = new Contract({ ...req.body, createdBy: req.user._id });
+    const saved = await contract.save();
+    res.status(201).json(saved);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
 };
 
-/**
- * @swagger
- * /api/contracts/{id}:
- *   put:
- *     summary: Update a contract
- *     tags: [Contracts]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- */
+// Update contract
 export const updateContract = async (req, res) => {
   try {
-    const contract = await Contract.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true }
-    ).populate('client');
-    
-    if (!contract) {
-      return res.status(404).json({ message: 'Contract not found' });
-    }
-    res.json(contract);
+    const contract = await Contract.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!contract) return res.status(404).json({ message: 'Contract not found' });
+    res.status(200).json(contract);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
 };
 
-/**
- * @swagger
- * /api/contracts/{id}:
- *   delete:
- *     summary: Delete a contract
- *     tags: [Contracts]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- */
+// Delete contract (soft delete)
 export const deleteContract = async (req, res) => {
   try {
-    const contract = await Contract.findByIdAndDelete(req.params.id);
-    if (!contract) {
-      return res.status(404).json({ message: 'Contract not found' });
-    }
-    res.json({ message: 'Contract deleted' });
+    const contract = await Contract.findByIdAndUpdate(req.params.id, { isActive: false }, { new: true });
+    if (!contract) return res.status(404).json({ message: 'Contract not found' });
+    res.status(200).json({ message: 'Contract deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
-}; 
+};
+
+// Export contracts as CSV
+export const exportContractsCSV = async (req, res) => {
+  try {
+    const contracts = await Contract.find().populate('client', 'name email');
+    const fields = ['_id', 'title', 'client.name', 'startDate', 'endDate', 'totalAmount'];
+    const filePath = exportToCSV(contracts, fields, 'contracts');
+    res.download(filePath, () => {
+      fs.unlinkSync(filePath);
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Export contract as PDF (stub)
+export const exportContractPDF = async (req, res) => {
+  // TODO: Implement PDF export for contract
+  res.status(501).json({ message: 'PDF export for contract not implemented yet.' });
+};

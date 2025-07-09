@@ -5,10 +5,9 @@ import helmet from 'helmet';
 import compression from 'compression';
 import { createServer } from 'http';
 import { initializeSocket } from './config/socket.js';
-import { swaggerSetup } from './config/swagger.js';
+import { swaggerSetup } from '../api/node-rest-api/swagger.js';
 import mongoose from 'mongoose';
-import swaggerSpec from './config/swagger.js';
-
+import swaggerSpec from '../api/node-rest-api/swagger.js';
 
 const connectDB = async () => {
   try {
