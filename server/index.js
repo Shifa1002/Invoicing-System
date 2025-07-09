@@ -51,10 +51,18 @@ initializeSocket(server);
 // Connect to database
 connectDB();
 
+// CORS: allow Netlify frontend
+app.use(cors({
+  origin: [
+    'https://invoicing-system-2025.netlify.app',
+    'http://localhost:3000',
+  ],
+  credentials: true,
+}));
+
 // Apply middleware
 app.use(helmet()); // Security headers
 app.use(compression()); // Compress responses
-app.use(cors()); // Enable CORS
 app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 app.use(requestLogger); // Request logging
@@ -74,6 +82,11 @@ app.use('/api/products', productRoutes);
 app.use('/api/clients', clientRoutes);
 app.use('/api/contracts', contractRoutes);
 app.use('/api/invoices', invoiceRoutes);
+
+// Test route for live status
+app.get('/api/test', (req, res) => {
+  res.status(200).json({ status: 'ok', message: 'API is live and authenticated routes are mounted.' });
+});
 
 // Health check endpoint
 app.get('/health', (req, res) => {
