@@ -1,0 +1,10 @@
+[build]
+  command = "npm run build"
+  publish = "build"
+
+# Remove API proxy redirect; frontend should use full API URL
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
