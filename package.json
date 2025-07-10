@@ -1,8 +1,33 @@
 {
-<<<<<<< HEAD
-  "name": "client",
-  "version": "0.1.0",
+  "name": "invoicing-system-client",
+  "version": "1.0.0",
   "private": true,
+  "description": "MERN Stack Invoicing System",
+  "main": "index.js",
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "keywords": [
+    "invoicing",
+    "mern",
+    "react",
+    "node",
+    "express",
+    "mongodb"
+  ],
+  "author": "",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Shifa1002/Invoicing-System.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Shifa1002/Invoicing-System/issues"
+  },
+  "homepage": "https://github.com/Shifa1002/Invoicing-System#readme",
   "dependencies": {
     "@date-io/date-fns": "^2.17.0",
     "@emotion/react": "^11.11.1",
@@ -19,6 +44,7 @@
     "ajv-keywords": "^5.1.0",
     "axios": "^1.6.2",
     "date-fns": "^2.30.0",
+    "json2csv": "^6.0.0-alpha.2",
     "notistack": "^3.0.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -26,11 +52,9 @@
     "react-scripts": "^5.0.1",
     "web-vitals": "^2.1.4"
   },
-  "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+  "devDependencies": {
+    "@babel/plugin-proposal-optional-chaining": "^7.21.0",
+    "concurrently": "^8.2.2"
   },
   "eslintConfig": {
     "extends": [
@@ -49,46 +73,5 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  },
-  "devDependencies": {
-    "@babel/plugin-proposal-optional-chaining": "^7.21.0"
-=======
-  "name": "invoicing-system",
-  "version": "1.0.0",
-  "description": "MERN Stack Invoicing System",
-  "scripts": {
-    "start": "concurrently \"npm run server\" \"npm run client\"",
-    "server": "cd server && npm start",
-    "client": "cd client && npm start",
-    "dev": "concurrently \"npm run server:dev\" \"npm run client\"",
-    "server:dev": "cd server && npm run dev",
-    "install:all": "npm install && cd server && npm install && cd ../client && npm install",
-    "build": "cd client && npm run build"
-  },
-  "keywords": [
-    "invoicing",
-    "mern",
-    "react",
-    "node",
-    "express",
-    "mongodb"
-  ],
-  "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "concurrently": "^8.2.2"
-  },
-  "main": "index.js",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Shifa1002/Invoicing-System.git"
-  },
-  "bugs": {
-    "url": "https://github.com/Shifa1002/Invoicing-System/issues"
-  },
-  "homepage": "https://github.com/Shifa1002/Invoicing-System#readme",
-  "dependencies": {
-    "json2csv": "^6.0.0-alpha.2"
->>>>>>> 7c013db5e34d7c9d6045f1ee91765e8f4e109d53
   }
 }
