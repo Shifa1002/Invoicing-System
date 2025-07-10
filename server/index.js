@@ -97,8 +97,8 @@ const startServer = async () => {
   app.use('/api/contracts', contractRoutes);
   app.use('/api/invoices', invoiceRoutes);
 
-  // Health check
-  app.get('/health', (req, res) => {
+  // Health check (moved to /api/health for consistency)
+  app.get('/api/health', (req, res) => {
     res.status(200).json({
       status: 'ok',
       timestamp: new Date().toISOString(),
