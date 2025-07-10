@@ -15,6 +15,19 @@ dotenv.config();
 const app = express();
 const server = createServer(app);
 
+app.use(cors({
+  origin: [
+    'https://invoicing-system-2025.netlify.app',
+    'https://invoicing-system.netlify.app',
+    'http://localhost:3000',
+    'http://localhost:3001',
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+}));
+
+
 // ✅ Export nodemailer transporter for use in services
 export const mailTransporter = nodemailer.createTransport({
   service: 'gmail',
@@ -55,18 +68,6 @@ import invoiceRoutes from './routes/invoiceRoutes.js';
 const startServer = async () => {
   await connectDB();
   initializeSocket(server);
-
-  app.use(cors({
-    origin: [
-      'https://invoicing-system-2025.netlify.app',
-      'https://invoicing-system.netlify.app',
-      'http://localhost:3000',
-      'http://localhost:3001',
-    ],
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  }));
 
   app.use(helmet({
     contentSecurityPolicy: {
@@ -119,7 +120,7 @@ const startServer = async () => {
   app.use(errorHandler);
 
   // Start server
-  const PORT = 5050;
+  const PORT = 5000;
 
   server.listen(PORT, () => {
     console.log(`✅ Server running in ${process.env.NODE_ENV || 'development'} on port ${PORT}`);

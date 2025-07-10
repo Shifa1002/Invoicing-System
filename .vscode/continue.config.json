@@ -1,9 +1,0 @@
-{
-  "models": [
-    {
-      "title": "Code Llama (Ollama)",
-      "provider": "ollama",
-      "model": "codellama"
-    }
-  ]
-}

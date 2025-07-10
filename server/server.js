@@ -1,5 +1,4 @@
-// DEPRECATED: Use server/index.js as the only backend entry point.
-// This file is archived to prevent confusion.
+
 import express from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
@@ -19,14 +18,10 @@ import contractRoutes from './routes/contractRoutes.js';
 import invoiceRoutes from './routes/invoiceRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import userRoutes from './routes/userRoutes.js';
-
-// Load environment variables first
-dotenv.config();
-
-// Import routes
 import authRoutes from './routes/authRoutes.js';
 
-// Load Swagger documentation
+dotenv.config();
+
 const swaggerDocument = JSON.parse(fs.readFileSync('./swagger.json', 'utf8'));
 
 const app = express();
@@ -34,76 +29,48 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Middleware
-app.use(helmet()); // Security headers
-app.use(compression()); // Compress responses
-app.use(cors()); // Enable CORS
-app.use(morgan('dev')); // Logging
-app.use(express.json()); // Parse JSON bodies
-app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
+app.use(helmet());
+app.use(compression());
+app.use(cors({
+  origin: 'https://invoicing-system-2025.netlify.app', 
+  credentials: true,
+}));
+;
+app.use(morgan('dev'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// Serve static files from the React app
+// Static frontend
 app.use(express.static(join(__dirname, '../client/build')));
 
-// Swagger documentation
+// Swagger
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-// Health check endpoint
+// Health check
 app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
+  res.json({
+    status: 'ok',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV,
-    mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+    mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
   });
 });
 
-// Routes
+// API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/clients', auth, clientRoutes);
 app.use('/api/products', auth, productRoutes);
 app.use('/api/contracts', auth, contractRoutes);
 app.use('/api/invoices', auth, invoiceRoutes);
-app.use('/api/users', userRoutes); 
+app.use('/api/users', userRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 
-// Handle React routing, return all requests to React app
+// React route fallback
 app.get('*', (req, res) => {
   res.sendFile(join(__dirname, '../client/build', 'index.html'));
 });
 
-// MongoDB connection
-const MONGODB_URI = process.env.MONGODB_URI;
-if (!MONGODB_URI) {
-  console.error('MONGODB_URI is not defined in environment variables');
-  process.exit(1);
-}
-
-// Connect to MongoDB with retry logic
-const connectWithRetry = async () => {
-  try {
-    await mongoose.connect(MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    console.log('Connected to MongoDB');
-    
-   const PORT = 5050;
-;
-    app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
-      console.log(`API Documentation available at http://localhost:${PORT}/api-docs`);
-    });
-  } catch (error) {
-    console.error('MongoDB connection error:', error);
-    console.log('Retrying connection in 5 seconds...');
-    setTimeout(connectWithRetry, 5000);
-  }
-};
-
-// Start the server
-connectWithRetry();
-
-// Error handling middleware
+// Error handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(err.status || 500).json({
@@ -112,20 +79,38 @@ app.use((err, req, res, next) => {
   });
 });
 
+// MongoDB connection
+const MONGODB_URI = process.env.MONGODB_URI;
+if (!MONGODB_URI) {
+  console.error('❌ MONGODB_URI not defined in .env');
+  process.exit(1);
+}
 
+mongoose.connect(MONGODB_URI)
+  .then(() => {
+    console.log('✅ Connected to MongoDB');
+
+    const PORT = process.env.PORT || 5000;
+
+    // 👇 Use IPv4 binding to prevent EADDRINUSE errors on :: (IPv6)
+    app.listen(PORT, '127.0.0.1', () => {
+      console.log(`🚀 Server running at http://127.0.0.1:${PORT}`);
+      console.log(`📚 Swagger docs: http://127.0.0.1:${PORT}/api-docs`);
+    });
+  })
+  .catch((err) => {
+    console.error('❌ MongoDB connection error:', err.message);
+    process.exit(1);
+  });
+
+// Handle unhandled rejections and exceptions
 process.on('unhandledRejection', (err) => {
   console.error('Unhandled Promise Rejection:', err);
-
 });
 
-// Handle uncaught exceptions
 process.on('uncaughtException', (err) => {
   console.error('Uncaught Exception:', err);
-  // Give the server time to log the error before crashing
-  setTimeout(() => {
-    process.exit(1);
-  }, 1000);
+  setTimeout(() => process.exit(1), 1000);
 });
 
-
-export default app; 
+export default app;
