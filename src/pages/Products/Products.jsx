@@ -115,8 +115,10 @@ const Products = () => {
         limit: paginationModel.pageSize,
         search: searchQuery
       });
-      console.log(response.data);
-      const data = response.data.products || response.data || [];
+      // Fix: handle both array and object response, default to []
+      const data = Array.isArray(response.data)
+        ? response.data
+        : (response.data?.products || []);
       const cleanedProducts = data.filter((product) => product && product._id);
 
       setProducts(cleanedProducts);

@@ -89,48 +89,49 @@ export const authApi = {
   },
 };
 
+// NOTE: All endpoints are prefixed with /api for deployed backend compatibility
 // Clients APIs
 export const clientsApi = {
-  getAll: () => api.get('/clients').then(res => res.data),
-  getById: (id) => api.get(`/clients/${id}`).then(res => res.data),
-  create: (data) => api.post('/clients', data).then(res => res.data),
-  update: (id, data) => api.put(`/clients/${id}`, data).then(res => res.data),
-  remove: (id) => api.delete(`/clients/${id}`).then(res => res.data),
+  getAll: () => api.get('/api/clients').then(res => res.data),
+  getById: (id) => api.get(`/api/clients/${id}`).then(res => res.data),
+  create: (data) => api.post('/api/clients', data).then(res => res.data),
+  update: (id, data) => api.put(`/api/clients/${id}`, data).then(res => res.data),
+  remove: (id) => api.delete(`/api/clients/${id}`).then(res => res.data),
 };
 
 // Products APIs
 export const productsApi = {
-  getAll: () => api.get('/products').then(res => res.data),
-  getById: (id) => api.get(`/products/${id}`).then(res => res.data),
-  create: (data) => api.post('/products', data).then(res => res.data),
-  update: (id, data) => api.put(`/products/${id}`, data).then(res => res.data),
-  remove: (id) => api.delete(`/products/${id}`).then(res => res.data),
+  getAll: () => api.get('/api/products').then(res => res.data),
+  getById: (id) => api.get(`/api/products/${id}`).then(res => res.data),
+  create: (data) => api.post('/api/products', data).then(res => res.data),
+  update: (id, data) => api.put(`/api/products/${id}`, data).then(res => res.data),
+  remove: (id) => api.delete(`/api/products/${id}`).then(res => res.data),
 };
 
 // Contracts APIs
 export const contractsApi = {
-  getAll: () => api.get('/contracts').then(res => res.data),
-  getById: (id) => api.get(`/contracts/${id}`).then(res => res.data),
-  create: (data) => api.post('/contracts', data).then(res => res.data),
-  update: (id, data) => api.put(`/contracts/${id}`, data).then(res => res.data),
-  remove: (id) => api.delete(`/contracts/${id}`).then(res => res.data),
-  exportCSV: () => api.get('/contracts/export/csv', { responseType: 'blob' }),
-  exportPDF: () => api.get('/contracts/export/pdf', { responseType: 'blob' }),
+  getAll: () => api.get('/api/contracts').then(res => res.data),
+  getById: (id) => api.get(`/api/contracts/${id}`).then(res => res.data),
+  create: (data) => api.post('/api/contracts', data).then(res => res.data),
+  update: (id, data) => api.put(`/api/contracts/${id}`, data).then(res => res.data),
+  remove: (id) => api.delete(`/api/contracts/${id}`).then(res => res.data),
+  exportCSV: () => api.get('/api/contracts/export/csv', { responseType: 'blob' }),
+  exportPDF: (id) => api.get(`/api/contracts/${id}/export/pdf`, { responseType: 'blob' }),
 };
 
 // Invoices APIs
 export const invoicesApi = {
-  getAll: () => api.get('/invoices').then(res => res.data),
-  getById: (id) => api.get(`/invoices/${id}`).then(res => res.data),
-  create: (data) => api.post('/invoices', data).then(res => res.data),
-  update: (id, data) => api.put(`/invoices/${id}`, data).then(res => res.data),
-  remove: (id) => api.delete(`/invoices/${id}`).then(res => res.data),
-  exportCSV: () => api.get('/invoices/export/csv', { responseType: 'blob' }),
-  exportPDF: () => api.get('/invoices/export/pdf', { responseType: 'blob' }),
+  getAll: () => api.get('/api/invoices').then(res => res.data),
+  getById: (id) => api.get(`/api/invoices/${id}`).then(res => res.data),
+  create: (data) => api.post('/api/invoices', data).then(res => res.data),
+  update: (id, data) => api.put(`/api/invoices/${id}`, data).then(res => res.data),
+  remove: (id) => api.delete(`/api/invoices/${id}`).then(res => res.data),
+  exportCSV: () => api.get('/api/invoices/export/csv', { responseType: 'blob' }),
+  exportPDF: (id) => api.get(`/api/invoices/${id}/export/pdf`, { responseType: 'blob' }),
 };
 
 // Dashboard APIs
 export const dashboardApi = {
-  getStats: () => api.get('/dashboard/stats').then(res => res.data),
-  getSummary: () => api.get('/dashboard/summary').then(res => res.data),
+  getStats: () => api.get('/api/dashboard/stats').then(res => res.data),
+  getSummary: () => api.get('/api/dashboard/summary').then(res => res.data),
 };
