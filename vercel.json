@@ -1,5 +1,8 @@
 {
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "https://your-backend-url/api/$1" }
+    {
+      "source": "/api/(.*)",
+      "destination": "https://invoicing-system-mruw.onrender.com/api/$1"
+    }
   ]
-} 
+}
