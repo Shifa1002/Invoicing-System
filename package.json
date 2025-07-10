@@ -2,13 +2,15 @@
   "name": "invoicing-system-client",
   "version": "1.0.0",
   "private": true,
-  "description": "MERN Stack Invoicing System",
+  "description": "MERN Stack Invoicing System - Frontend",
   "main": "index.js",
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "lint": "eslint src --ext .js,.jsx,.ts,.tsx",
+    "lint:fix": "eslint src --ext .js,.jsx,.ts,.tsx --fix"
   },
   "keywords": [
     "invoicing",
@@ -16,10 +18,12 @@
     "react",
     "node",
     "express",
-    "mongodb"
+    "mongodb",
+    "dashboard",
+    "analytics"
   ],
-  "author": "",
-  "license": "ISC",
+  "author": "Invoice System Team",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Shifa1002/Invoicing-System.git"
@@ -27,7 +31,7 @@
   "bugs": {
     "url": "https://github.com/Shifa1002/Invoicing-System/issues"
   },
-  "homepage": "https://github.com/Shifa1002/Invoicing-System#readme",
+  "homepage": "https://invoicing-system-2025.netlify.app",
   "dependencies": {
     "@date-io/date-fns": "^2.17.0",
     "@emotion/react": "^11.11.1",
@@ -40,8 +44,8 @@
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
-    "ajv": "^8.17.1",
-    "ajv-keywords": "^5.1.0",
+    "ajv": "^6.12.6",
+    "ajv-keywords": "^3.5.2",
     "axios": "^1.6.2",
     "date-fns": "^2.30.0",
     "json2csv": "^6.0.0-alpha.2",
@@ -54,7 +58,11 @@
   },
   "devDependencies": {
     "@babel/plugin-proposal-optional-chaining": "^7.21.0",
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.1.0",
+    "prettier": "^3.1.1"
   },
   "eslintConfig": {
     "extends": [
@@ -73,5 +81,9 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
   }
 }

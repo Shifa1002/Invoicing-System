@@ -1,11 +1,15 @@
 // In ../../services/api.js
 import axios from 'axios';
 
+// Use environment variable for API base URL, fallback to localhost for development
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000/api';
+
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_BASE_URL,
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 10000, // 10 second timeout
 });
 
 // Attach token to every request if present
@@ -15,6 +19,8 @@ api.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
+}, (error) => {
+  return Promise.reject(error);
 });
 
 // Handle auth errors globally
@@ -47,6 +53,10 @@ export const authApi = {
     }
   },
   register: async (data) => api.post('/auth/register', data),
+  logout: () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+  },
 };
 
 export const clientsApi = {
@@ -83,4 +93,8 @@ export const invoicesApi = {
   delete: (id) => api.delete(`/invoices/${id}`),
   exportCSV: () => api.get('/invoices/export/csv', { responseType: 'blob' }),
   exportPDF: (id) => api.get(`/invoices/${id}/export/pdf`, { responseType: 'blob' }),
+};
+
+export const dashboardApi = {
+  getStats: () => api.get('/dashboard'),
 };

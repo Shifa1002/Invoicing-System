@@ -32,6 +32,7 @@ const InvoiceForm = ({ initialData, onSubmit, onCancel }) => {
     status: 'draft',
     isPaid: false,
     paymentDate: null,
+    paymentMode: '',
     paymentMethod: '',
     paymentReference: '',
   });
@@ -331,6 +332,24 @@ const InvoiceForm = ({ initialData, onSubmit, onCancel }) => {
           />
         </Grid>
 
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            label="Payment Mode"
+            value={formData.paymentMode}
+            onChange={handleInputChange('paymentMode')}
+            select
+            required
+          >
+            <MenuItem value="upi">UPI</MenuItem>
+            <MenuItem value="bank_transfer">Bank Transfer</MenuItem>
+            <MenuItem value="credit_card">Credit Card</MenuItem>
+            <MenuItem value="cash">Cash</MenuItem>
+            <MenuItem value="check">Check</MenuItem>
+            <MenuItem value="other">Other</MenuItem>
+          </TextField>
+        </Grid>
+
         {formData.isPaid && (
           <>
             <Grid item xs={12} md={6}>
@@ -347,14 +366,8 @@ const InvoiceForm = ({ initialData, onSubmit, onCancel }) => {
                 label="Payment Method"
                 value={formData.paymentMethod}
                 onChange={handleInputChange('paymentMethod')}
-                select
-                required
-              >
-                <MenuItem value="bank_transfer">Bank Transfer</MenuItem>
-                <MenuItem value="credit_card">Credit Card</MenuItem>
-                <MenuItem value="check">Check</MenuItem>
-                <MenuItem value="cash">Cash</MenuItem>
-              </TextField>
+                placeholder="e.g., UPI ID, Bank Account, Card Number"
+              />
             </Grid>
             <Grid item xs={12} md={6}>
               <TextField
@@ -362,7 +375,7 @@ const InvoiceForm = ({ initialData, onSubmit, onCancel }) => {
                 label="Payment Reference"
                 value={formData.paymentReference}
                 onChange={handleInputChange('paymentReference')}
-                required
+                placeholder="Transaction ID, Check Number, etc."
               />
             </Grid>
           </>
