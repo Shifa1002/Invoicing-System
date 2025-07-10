@@ -1,3 +1,5 @@
+// DEPRECATED: Use server/index.js as the only backend entry point.
+// This file is archived to prevent confusion.
 import express from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
@@ -85,7 +87,8 @@ const connectWithRetry = async () => {
     });
     console.log('Connected to MongoDB');
     
-    const PORT = process.env.PORT || 5000;
+   const PORT = 5050;
+;
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
       console.log(`API Documentation available at http://localhost:${PORT}/api-docs`);

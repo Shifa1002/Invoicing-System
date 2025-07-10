@@ -1,5 +1,4 @@
 import express from 'express';
-import auth from '../middleware/auth.js';
 import {
   getContracts,
   getContractById,
@@ -7,17 +6,28 @@ import {
   updateContract,
   deleteContract,
   exportContractsCSV,
-  exportContractPDF
+  exportContractPDF,
+  sendContractEmail
 } from '../controllers/contractController.js';
+import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-router.get('/', auth, getContracts);
-router.get('/:id', auth, getContractById);
-router.post('/', auth, createContract);
-router.put('/:id', auth, updateContract);
-router.delete('/:id', auth, deleteContract);
-router.get('/export/csv', auth, exportContractsCSV);
-router.get('/:id/export/pdf', auth, exportContractPDF);
+// Apply authentication middleware to all routes
+router.use(protect);
+
+// CRUD operations
+router.get('/', getContracts);
+router.get('/:id', getContractById);
+router.post('/', createContract);
+router.put('/:id', updateContract);
+router.delete('/:id', deleteContract);
+
+// Export functionality
+router.get('/export/csv', exportContractsCSV);
+router.get('/:id/export/pdf', exportContractPDF);
+
+// Email functionality
+router.post('/:id/send-email', sendContractEmail);
 
 export default router; 

@@ -55,17 +55,18 @@ export const register = async (req, res) => {
     user.password = await bcrypt.hash(password, salt);
     await user.save();
 
-    const payload = { user: { id: user.id } };
+    const payload = { id: user._id };
     jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' }, (err, token) => {
       if (err) throw err;
-      res.status(201).json({ token });
+      const userObj = user.toObject();
+      delete userObj.password;
+      res.status(201).json({ token, user: userObj });
     });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 
-// Login an existing user
 // Login an existing user
 export const login = async (req, res) => {
   const { email, password } = req.body;
@@ -77,10 +78,11 @@ export const login = async (req, res) => {
     if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
 
     // Generate JWT token
-    const payload = { user: { id: user._id } };
+    const payload = { id: user._id };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
-
-    res.json({ token });
+    const userObj = user.toObject();
+    delete userObj.password;
+    res.json({ token, user: userObj });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });

@@ -1,5 +1,4 @@
 import express from 'express';
-import auth from '../middleware/auth.js';
 import {
   getInvoices,
   getInvoiceById,
@@ -7,17 +6,28 @@ import {
   updateInvoice,
   deleteInvoice,
   exportInvoicesCSV,
-  exportInvoicePDF
+  exportInvoicePDF,
+  sendInvoiceEmail
 } from '../controllers/invoiceController.js';
+import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-router.get('/', auth, getInvoices);
-router.get('/:id', auth, getInvoiceById);
-router.post('/', auth, createInvoice);
-router.put('/:id', auth, updateInvoice);
-router.delete('/:id', auth, deleteInvoice);
-router.get('/export/csv', auth, exportInvoicesCSV);
-router.get('/:id/export/pdf', auth, exportInvoicePDF);
+// Apply authentication middleware to all routes
+router.use(protect);
+
+// CRUD operations
+router.get('/', getInvoices);
+router.get('/:id', getInvoiceById);
+router.post('/', createInvoice);
+router.put('/:id', updateInvoice);
+router.delete('/:id', deleteInvoice);
+
+// Export functionality
+router.get('/export/csv', exportInvoicesCSV);
+router.get('/:id/export/pdf', exportInvoicePDF);
+
+// Email functionality
+router.post('/:id/send-email', sendInvoiceEmail);
 
 export default router;

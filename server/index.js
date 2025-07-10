@@ -4,138 +4,146 @@ import dotenv from 'dotenv';
 import helmet from 'helmet';
 import compression from 'compression';
 import { createServer } from 'http';
-import { initializeSocket } from './config/socket.js';
-import { swaggerSetup } from '../api/node-rest-api/swagger.js';
 import mongoose from 'mongoose';
-import swaggerSpec from '../api/node-rest-api/swagger.js';
+import nodemailer from 'nodemailer';
+import { initializeSocket } from './config/socket.js';
 
+// Load environment variables early
+dotenv.config();
+
+// Create Express app and HTTP server
+const app = express();
+const server = createServer(app);
+
+// ✅ Export nodemailer transporter for use in services
+export const mailTransporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+
+// MongoDB connection
 const connectDB = async () => {
   try {
     const conn = await mongoose.connect(process.env.MONGODB_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
-
     console.log(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
     console.error(`Error: ${error.message}`);
     process.exit(1);
   }
 };
-// Import middleware
+
+// Middleware
 import { requestLogger, errorLogger } from './middleware/logger.js';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
 import { apiLimiter, authLimiter, cleanup as rateLimitCleanup } from './middleware/rateLimiter.js';
 
-// Import routes
+// Routes
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
-import productRoutes from './routes/products.js';
+import productRoutes from './routes/productRoutes.js';
 import clientRoutes from './routes/clientsRoutes.js';
-import contractRoutes from './routes/contracts.js';
-import invoiceRoutes from './routes/invoices.js';
+import contractRoutes from './routes/contractRoutes.js';
+import invoiceRoutes from './routes/invoiceRoutes.js';
 
-// Load environment variables
-dotenv.config();
+const startServer = async () => {
+  await connectDB();
+  initializeSocket(server);
 
-// Create Express app
-const app = express();
+  app.use(cors({
+    origin: [
+      'https://invoicing-system-2025.netlify.app',
+      'https://invoicing-system.netlify.app',
+      'http://localhost:3000',
+      'http://localhost:3001',
+    ],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  }));
 
-// Create HTTP server
-const server = createServer(app);
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'"],
+        imgSrc: ["'self'", "data:", "https:"],
+      },
+    },
+  }));
+  app.use(compression());
+  app.use(express.json({ limit: '10mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+  app.use(requestLogger);
 
-// Initialize WebSocket
-initializeSocket(server);
+  // Apply rate limiting
+  app.use('/api/', apiLimiter);
+  app.use('/api/auth', authLimiter);
 
-// Connect to database
-connectDB();
+  // Mount routes
+  app.use('/api/auth', authRoutes);
+  app.use('/api/users', userRoutes);
+  app.use('/api/dashboard', dashboardRoutes);
+  app.use('/api/products', productRoutes);
+  app.use('/api/clients', clientRoutes);
+  app.use('/api/contracts', contractRoutes);
+  app.use('/api/invoices', invoiceRoutes);
 
-// CORS: allow Netlify frontend
-app.use(cors({
-  origin: [
-    'https://invoicing-system-2025.netlify.app',
-    'http://localhost:3000',
-  ],
-  credentials: true,
-}));
-
-// Apply middleware
-app.use(helmet()); // Security headers
-app.use(compression()); // Compress responses
-app.use(express.json()); // Parse JSON bodies
-app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
-app.use(requestLogger); // Request logging
-
-// Apply rate limiting
-app.use('/api/', apiLimiter);
-app.use('/api/auth', authLimiter);
-
-// Initialize Swagger
-swaggerSetup(app);
-
-// API Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/products', productRoutes);
-app.use('/api/clients', clientRoutes);
-app.use('/api/contracts', contractRoutes);
-app.use('/api/invoices', invoiceRoutes);
-
-// Test route for live status
-app.get('/api/test', (req, res) => {
-  res.status(200).json({ status: 'ok', message: 'API is live and authenticated routes are mounted.' });
-});
-
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok' });
-});
-
-// Error handling
-app.use(notFound);
-app.use(errorLogger);
-app.use(errorHandler);
-
-// Start server
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-  console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
-});
-
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (err) => {
-  console.error('Unhandled Promise Rejection:', err);
-  // Close server & exit process
-  server.close(() => process.exit(1));
-});
-
-// Handle uncaught exceptions
-process.on('uncaughtException', (err) => {
-  console.error('Uncaught Exception:', err);
-  // Close server & exit process
-  server.close(() => process.exit(1));
-});
-
-// Cleanup on process termination
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received. Shutting down gracefully');
-  rateLimitCleanup();
-  server.close(() => {
-    console.log('Process terminated');
+  // Health check
+  app.get('/health', (req, res) => {
+    res.status(200).json({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+    });
   });
-});
 
-import {
-  unstable_HistoryRouter as HistoryRouter,
-  createBrowserHistory,
-} from 'react-router-dom';
+  app.get('/api/test', (req, res) => {
+    res.status(200).json({
+      status: 'ok',
+      message: 'API is live and authenticated routes are mounted.',
+      timestamp: new Date().toISOString(),
+    });
+  });
 
-const history = createBrowserHistory({
-  window,
-  future: {
-    v7_startTransition: true,
-    v7_relativeSplatPath: true,
-  },
-});
+  // Error handling
+  app.use(notFound);
+  app.use(errorLogger);
+  app.use(errorHandler);
+
+  // Start server
+  const PORT = 5050;
+
+  server.listen(PORT, () => {
+    console.log(`✅ Server running in ${process.env.NODE_ENV || 'development'} on port ${PORT}`);
+    console.log(`📈 Health check available at: http://localhost:${PORT}/health`);
+  });
+
+  // Cleanup and exit handling
+  process.on('unhandledRejection', (err) => {
+    console.error('❌ Unhandled Promise Rejection:', err);
+    server.close(() => process.exit(1));
+  });
+
+  process.on('uncaughtException', (err) => {
+    console.error('❌ Uncaught Exception:', err);
+    server.close(() => process.exit(1));
+  });
+
+  process.on('SIGTERM', () => {
+    console.log('🛑 SIGTERM received. Cleaning up...');
+    rateLimitCleanup();
+    server.close(() => {
+      console.log('✅ Server closed.');
+    });
+  });
+};
+
+startServer();

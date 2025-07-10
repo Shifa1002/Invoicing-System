@@ -1,5 +1,5 @@
 import express from 'express';
-import auth from '../middleware/auth.js';
+import { protect } from '../middleware/authMiddleware.js';
 import {
   getClients,
   createClient,
@@ -38,7 +38,7 @@ const router = express.Router();
  *       500:
  *         description: Server error
  */
-router.get('/', auth, getClients);
+router.get('/', protect, getClients);
 
 /**
  * @swagger
@@ -66,7 +66,7 @@ router.get('/', auth, getClients);
  *       401:
  *         description: Unauthorized
  */
-router.post('/', auth, createClient);
+router.post('/', protect, createClient);
 
 /**
  * @swagger
@@ -103,7 +103,7 @@ router.post('/', auth, createClient);
  *       404:
  *         description: Client not found
  */
-router.put('/:id', auth, updateClient);
+router.put('/:id', protect, updateClient);
 
 /**
  * @swagger
@@ -128,6 +128,6 @@ router.put('/:id', auth, updateClient);
  *       404:
  *         description: Client not found
  */
-router.delete('/:id', auth, deleteClient);
+router.delete('/:id', protect, deleteClient);
 
 export default router; 

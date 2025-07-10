@@ -12,417 +12,412 @@ class PDFService {
     this.logoPath = path.join(__dirname, '../assets/logo.png');
     this.fontPath = path.join(__dirname, '../assets/fonts');
     this.tempDir = path.join(__dirname, '../temp');
+    this.outputDir = path.join(process.cwd(), 'temp');
+    if (!fs.existsSync(this.outputDir)) {
+      fs.mkdirSync(this.outputDir, { recursive: true });
+    }
   }
 
   async generateInvoicePDF(invoice) {
     return new Promise((resolve, reject) => {
       try {
-        const doc = new PDFDocument({
-          size: 'A4',
-          margin: 50,
-          bufferPages: true,
-        });
+        const doc = new PDFDocument({ margin: 50 });
+        const filename = `invoice-${invoice.invoiceNumber || invoice._id}-${Date.now()}.pdf`;
+        const filepath = path.join(this.outputDir, filename);
+        const stream = fs.createWriteStream(filepath);
 
-        // Create temp file path
-        const fileName = `invoice-${invoice.invoiceNumber}-${Date.now()}.pdf`;
-        const filePath = path.join(this.tempDir, fileName);
-        const writeStream = fs.createWriteStream(filePath);
-
-        // Pipe PDF to file
-        doc.pipe(writeStream);
-
-        // Add fonts
-        doc.registerFont('Regular', path.join(this.fontPath, 'Roboto-Regular.ttf'));
-        doc.registerFont('Bold', path.join(this.fontPath, 'Roboto-Bold.ttf'));
-        doc.registerFont('Light', path.join(this.fontPath, 'Roboto-Light.ttf'));
+        doc.pipe(stream);
 
         // Header
-        this.generateHeader(doc, invoice);
+        doc.fontSize(24).text('INVOICE', { align: 'center' });
+        doc.moveDown();
+        doc.fontSize(12).text(`Invoice #: ${invoice.invoiceNumber || 'N/A'}`, { align: 'right' });
+        doc.text(`Date: ${format(new Date(invoice.issueDate), 'MMM dd, yyyy')}`, { align: 'right' });
+        doc.text(`Due Date: ${format(new Date(invoice.dueDate), 'MMM dd, yyyy')}`, { align: 'right' });
+        doc.moveDown();
 
         // Client Information
-        this.generateClientInfo(doc, invoice);
-
-        // Invoice Details
-        this.generateInvoiceDetails(doc, invoice);
+        if (invoice.client) {
+          doc.fontSize(14).text('Bill To:', { underline: true });
+          doc.fontSize(12).text(invoice.client.name);
+          if (invoice.client.email) doc.text(`Email: ${invoice.client.email}`);
+          if (invoice.client.phone) doc.text(`Phone: ${invoice.client.phone}`);
+          if (invoice.client.address) doc.text(`Address: ${invoice.client.address}`);
+          doc.moveDown();
+        }
 
         // Items Table
-        this.generateItemsTable(doc, invoice);
+        doc.fontSize(14).text('Items:', { underline: true });
+        doc.moveDown();
+
+        // Table headers
+        const tableTop = doc.y;
+        doc.fontSize(10);
+        doc.text('Item', 50, tableTop);
+        doc.text('Quantity', 200, tableTop);
+        doc.text('Unit Price', 300, tableTop);
+        doc.text('Total', 400, tableTop);
+
+        // Table content
+        let currentY = tableTop + 20;
+        invoice.products.forEach((item, index) => {
+          const productName = item.product?.name || 'Unknown Product';
+          const quantity = item.quantity || 0;
+          const unitPrice = item.unitPrice || item.product?.price || 0;
+          const total = quantity * unitPrice;
+
+          doc.text(productName, 50, currentY);
+          doc.text(quantity.toString(), 200, currentY);
+          doc.text(`$${unitPrice.toFixed(2)}`, 300, currentY);
+          doc.text(`$${total.toFixed(2)}`, 400, currentY);
+
+          currentY += 20;
+        });
 
         // Totals
-        this.generateTotals(doc, invoice);
+        doc.moveDown(2);
+        doc.text(`Subtotal: $${invoice.subtotal?.toFixed(2) || '0.00'}`, { align: 'right' });
+        doc.text(`Tax: $${invoice.tax?.toFixed(2) || '0.00'}`, { align: 'right' });
+        doc.fontSize(14).text(`Total: $${invoice.totalAmount?.toFixed(2) || '0.00'}`, { align: 'right' });
 
         // Payment Information
-        if (invoice.isPaid) {
-          this.generatePaymentInfo(doc, invoice);
+        if (invoice.paymentMode) {
+          doc.moveDown(2);
+          doc.fontSize(12).text('Payment Information:', { underline: true });
+          doc.fontSize(10).text(`Payment Mode: ${invoice.paymentMode}`);
+          if (invoice.paymentMethod) doc.text(`Payment Method: ${invoice.paymentMethod}`);
+          if (invoice.paymentReference) doc.text(`Payment Reference: ${invoice.paymentReference}`);
+          if (invoice.paymentDate) doc.text(`Payment Date: ${format(new Date(invoice.paymentDate), 'MMM dd, yyyy')}`);
         }
 
-        // Notes and Terms
-        if (invoice.notes || invoice.terms) {
-          this.generateNotesAndTerms(doc, invoice);
+        // Notes
+        if (invoice.notes) {
+          doc.moveDown(2);
+          doc.fontSize(12).text('Notes:', { underline: true });
+          doc.fontSize(10).text(invoice.notes);
         }
 
-        // Footer
-        this.generateFooter(doc, invoice);
+        // Terms
+        if (invoice.terms) {
+          doc.moveDown(2);
+          doc.fontSize(12).text('Terms:', { underline: true });
+          doc.fontSize(10).text(invoice.terms);
+        }
 
-        // Finalize PDF
         doc.end();
 
-        writeStream.on('finish', () => {
-          resolve(filePath);
+        stream.on('finish', () => {
+          resolve(filepath);
         });
 
-        writeStream.on('error', (error) => {
-          reject(error);
-        });
+        stream.on('error', reject);
       } catch (error) {
         reject(error);
       }
     });
   }
 
-  generateHeader(doc, invoice) {
-    // Logo
-    if (fs.existsSync(this.logoPath)) {
-      doc.image(this.logoPath, 50, 45, { width: 100 });
-    }
+  async generateInvoicePDFBuffer(invoice) {
+    return new Promise((resolve, reject) => {
+      try {
+        const doc = new PDFDocument({ margin: 50 });
+        const chunks = [];
 
-    // Company Info
-    doc
-      .font('Bold')
-      .fontSize(20)
-      .text('INVOICE', 400, 50, { align: 'right' });
+        doc.on('data', chunk => chunks.push(chunk));
+        doc.on('end', () => resolve(Buffer.concat(chunks)));
 
-    doc
-      .font('Regular')
-      .fontSize(10)
-      .text('Your Company Name', 400, 80, { align: 'right' })
-      .text('123 Business Street', 400, 95, { align: 'right' })
-      .text('City, State 12345', 400, 110, { align: 'right' })
-      .text('Phone: (123) 456-7890', 400, 125, { align: 'right' })
-      .text('Email: billing@yourcompany.com', 400, 140, { align: 'right' });
+        // Header
+        doc.fontSize(24).text('INVOICE', { align: 'center' });
+        doc.moveDown();
+        doc.fontSize(12).text(`Invoice #: ${invoice.invoiceNumber || 'N/A'}`, { align: 'right' });
+        doc.text(`Date: ${format(new Date(invoice.issueDate), 'MMM dd, yyyy')}`, { align: 'right' });
+        doc.text(`Due Date: ${format(new Date(invoice.dueDate), 'MMM dd, yyyy')}`, { align: 'right' });
+        doc.moveDown();
 
-    // Invoice Number and Dates
-    doc
-      .font('Bold')
-      .fontSize(12)
-      .text(`Invoice #: ${invoice.invoiceNumber}`, 400, 170, { align: 'right' })
-      .font('Regular')
-      .text(
-        `Issue Date: ${format(new Date(invoice.issueDate), 'MMM dd, yyyy')}`,
-        400,
-        185,
-        { align: 'right' }
-      )
-      .text(
-        `Due Date: ${format(new Date(invoice.dueDate), 'MMM dd, yyyy')}`,
-        400,
-        200,
-        { align: 'right' }
-      );
+        // Client Information
+        if (invoice.client) {
+          doc.fontSize(14).text('Bill To:', { underline: true });
+          doc.fontSize(12).text(invoice.client.name);
+          if (invoice.client.email) doc.text(`Email: ${invoice.client.email}`);
+          if (invoice.client.phone) doc.text(`Phone: ${invoice.client.phone}`);
+          if (invoice.client.address) doc.text(`Address: ${invoice.client.address}`);
+          doc.moveDown();
+        }
 
-    // Status
-    const statusColors = {
-      paid: '#4CAF50',
-      pending: '#FFC107',
-      draft: '#9E9E9E',
-      overdue: '#F44336',
-    };
+        // Items Table
+        doc.fontSize(14).text('Items:', { underline: true });
+        doc.moveDown();
 
-    doc
-      .font('Bold')
-      .fontSize(12)
-      .fillColor(statusColors[invoice.status] || '#000000')
-      .text(invoice.status.toUpperCase(), 400, 215, { align: 'right' })
-      .fillColor('#000000');
+        // Table headers
+        const tableTop = doc.y;
+        doc.fontSize(10);
+        doc.text('Item', 50, tableTop);
+        doc.text('Quantity', 200, tableTop);
+        doc.text('Unit Price', 300, tableTop);
+        doc.text('Total', 400, tableTop);
 
-    // Line
-    doc
-      .moveTo(50, 250)
-      .lineTo(545, 250)
-      .stroke();
-  }
+        // Table content
+        let currentY = tableTop + 20;
+        invoice.products.forEach((item, index) => {
+          const productName = item.product?.name || 'Unknown Product';
+          const quantity = item.quantity || 0;
+          const unitPrice = item.unitPrice || item.product?.price || 0;
+          const total = quantity * unitPrice;
 
-  generateClientInfo(doc, invoice) {
-    const client = invoice.contract.client;
+          doc.text(productName, 50, currentY);
+          doc.text(quantity.toString(), 200, currentY);
+          doc.text(`$${unitPrice.toFixed(2)}`, 300, currentY);
+          doc.text(`$${total.toFixed(2)}`, 400, currentY);
 
-    doc
-      .font('Bold')
-      .fontSize(12)
-      .text('Bill To:', 50, 270);
-
-    doc
-      .font('Regular')
-      .fontSize(10)
-      .text(client.name, 50, 290)
-      .text(client.company?.name || '', 50, 305)
-      .text(client.address.street, 50, 320)
-      .text(
-        `${client.address.city}, ${client.address.state} ${client.address.zipCode}`,
-        50,
-        335
-      )
-      .text(client.address.country, 50, 350);
-
-    if (client.email) {
-      doc.text(`Email: ${client.email}`, 50, 365);
-    }
-    if (client.phone) {
-      doc.text(`Phone: ${client.phone}`, 50, 380);
-    }
-  }
-
-  generateInvoiceDetails(doc, invoice) {
-    // Contract Information
-    doc
-      .font('Bold')
-      .fontSize(12)
-      .text('Contract Details:', 50, 420);
-
-    doc
-      .font('Regular')
-      .fontSize(10)
-      .text(`Contract: ${invoice.contract.title}`, 50, 440)
-      .text(
-        `Start Date: ${format(
-          new Date(invoice.contract.startDate),
-          'MMM dd, yyyy'
-        )}`,
-        50,
-        455
-      )
-      .text(
-        `End Date: ${format(
-          new Date(invoice.contract.endDate),
-          'MMM dd, yyyy'
-        )}`,
-        50,
-        470
-      );
-  }
-
-  generateItemsTable(doc, invoice) {
-    // Table Header
-    const tableTop = 500;
-    const tableHeaders = [
-      { text: 'Description', width: 200 },
-      { text: 'Quantity', width: 80, align: 'right' },
-      { text: 'Unit Price', width: 100, align: 'right' },
-      { text: 'Discount', width: 80, align: 'right' },
-      { text: 'Amount', width: 100, align: 'right' },
-    ];
-
-    let currentTop = tableTop;
-
-    // Draw headers
-    doc.font('Bold').fontSize(10);
-    let currentLeft = 50;
-    tableHeaders.forEach((header) => {
-      doc.text(header.text, currentLeft, currentTop, {
-        width: header.width,
-        align: header.align || 'left',
-      });
-      currentLeft += header.width;
-    });
-
-    // Draw items
-    doc.font('Regular').fontSize(10);
-    currentTop += 20;
-
-    invoice.items.forEach((item) => {
-      if (currentTop > 700) {
-        // Add new page if needed
-        doc.addPage();
-        currentTop = 50;
-      }
-
-      currentLeft = 50;
-      const itemTotal =
-        item.quantity * item.unitPrice * (1 - item.discount / 100);
-
-      // Description
-      doc.text(item.description, currentLeft, currentTop, {
-        width: tableHeaders[0].width,
-      });
-      currentLeft += tableHeaders[0].width;
-
-      // Quantity
-      doc.text(item.quantity.toString(), currentLeft, currentTop, {
-        width: tableHeaders[1].width,
-        align: 'right',
-      });
-      currentLeft += tableHeaders[1].width;
-
-      // Unit Price
-      doc.text(`$${item.unitPrice.toFixed(2)}`, currentLeft, currentTop, {
-        width: tableHeaders[2].width,
-        align: 'right',
-      });
-      currentLeft += tableHeaders[2].width;
-
-      // Discount
-      doc.text(`${item.discount}%`, currentLeft, currentTop, {
-        width: tableHeaders[3].width,
-        align: 'right',
-      });
-      currentLeft += tableHeaders[3].width;
-
-      // Amount
-      doc.text(`$${itemTotal.toFixed(2)}`, currentLeft, currentTop, {
-        width: tableHeaders[4].width,
-        align: 'right',
-      });
-
-      // Item notes if any
-      if (item.notes) {
-        currentTop += 15;
-        doc
-          .font('Light')
-          .fontSize(8)
-          .text(item.notes, 50, currentTop, {
-            width: tableHeaders[0].width,
-          });
-      }
-
-      currentTop += 20;
-    });
-
-    // Draw table bottom line
-    doc
-      .moveTo(50, currentTop)
-      .lineTo(545, currentTop)
-      .stroke();
-  }
-
-  generateTotals(doc, invoice) {
-    const totalsTop = 700;
-    const rightAlign = 545;
-
-    doc.font('Regular').fontSize(10);
-
-    // Subtotal
-    doc
-      .text('Subtotal:', rightAlign - 150, totalsTop, { align: 'right' })
-      .text(`$${invoice.subtotal.toFixed(2)}`, rightAlign, totalsTop, {
-        align: 'right',
-      });
-
-    // Tax
-    doc
-      .text('Tax (10%):', rightAlign - 150, totalsTop + 20, { align: 'right' })
-      .text(`$${invoice.tax.toFixed(2)}`, rightAlign, totalsTop + 20, {
-        align: 'right',
-      });
-
-    // Total
-    doc
-      .font('Bold')
-      .text('Total:', rightAlign - 150, totalsTop + 40, { align: 'right' })
-      .text(`$${invoice.total.toFixed(2)}`, rightAlign, totalsTop + 40, {
-        align: 'right',
-      });
-  }
-
-  generatePaymentInfo(doc, invoice) {
-    const paymentTop = 780;
-
-    doc
-      .font('Bold')
-      .fontSize(12)
-      .text('Payment Information:', 50, paymentTop);
-
-    doc
-      .font('Regular')
-      .fontSize(10)
-      .text(
-        `Payment Date: ${format(
-          new Date(invoice.paymentDate),
-          'MMM dd, yyyy'
-        )}`,
-        50,
-        paymentTop + 20
-      )
-      .text(
-        `Payment Method: ${invoice.paymentMethod
-          .replace('_', ' ')
-          .toUpperCase()}`,
-        50,
-        paymentTop + 35
-      )
-      .text(`Reference: ${invoice.paymentReference}`, 50, paymentTop + 50);
-  }
-
-  generateNotesAndTerms(doc, invoice) {
-    const notesTop = 850;
-    const columnWidth = 230;
-
-    if (invoice.notes) {
-      doc
-        .font('Bold')
-        .fontSize(12)
-        .text('Notes:', 50, notesTop);
-
-      doc
-        .font('Regular')
-        .fontSize(10)
-        .text(invoice.notes, 50, notesTop + 20, {
-          width: columnWidth,
-          align: 'justify',
+          currentY += 20;
         });
-    }
 
-    if (invoice.terms) {
-      doc
-        .font('Bold')
-        .fontSize(12)
-        .text('Terms & Conditions:', 50 + columnWidth + 20, notesTop);
+        // Totals
+        doc.moveDown(2);
+        doc.text(`Subtotal: $${invoice.subtotal?.toFixed(2) || '0.00'}`, { align: 'right' });
+        doc.text(`Tax: $${invoice.tax?.toFixed(2) || '0.00'}`, { align: 'right' });
+        doc.fontSize(14).text(`Total: $${invoice.totalAmount?.toFixed(2) || '0.00'}`, { align: 'right' });
 
-      doc
-        .font('Regular')
-        .fontSize(10)
-        .text(invoice.terms, 50 + columnWidth + 20, notesTop + 20, {
-          width: columnWidth,
-          align: 'justify',
-        });
-    }
+        // Payment Information
+        if (invoice.paymentMode) {
+          doc.moveDown(2);
+          doc.fontSize(12).text('Payment Information:', { underline: true });
+          doc.fontSize(10).text(`Payment Mode: ${invoice.paymentMode}`);
+          if (invoice.paymentMethod) doc.text(`Payment Method: ${invoice.paymentMethod}`);
+          if (invoice.paymentReference) doc.text(`Payment Reference: ${invoice.paymentReference}`);
+          if (invoice.paymentDate) doc.text(`Payment Date: ${format(new Date(invoice.paymentDate), 'MMM dd, yyyy')}`);
+        }
+
+        // Notes
+        if (invoice.notes) {
+          doc.moveDown(2);
+          doc.fontSize(12).text('Notes:', { underline: true });
+          doc.fontSize(10).text(invoice.notes);
+        }
+
+        // Terms
+        if (invoice.terms) {
+          doc.moveDown(2);
+          doc.fontSize(12).text('Terms:', { underline: true });
+          doc.fontSize(10).text(invoice.terms);
+        }
+
+        doc.end();
+      } catch (error) {
+        reject(error);
+      }
+    });
   }
 
-  generateFooter(doc, invoice) {
-    const pageCount = doc.bufferedPageRange().count;
-    for (let i = 0; i < pageCount; i++) {
-      doc.switchToPage(i);
+  async generateContractPDF(contract) {
+    return new Promise((resolve, reject) => {
+      try {
+        const doc = new PDFDocument({ margin: 50 });
+        const filename = `contract-${contract.contractNumber || contract._id}-${Date.now()}.pdf`;
+        const filepath = path.join(this.outputDir, filename);
+        const stream = fs.createWriteStream(filepath);
 
-      // Footer
-      doc
-        .font('Light')
-        .fontSize(8)
-        .text(
-          'Thank you for your business!',
-          50,
-          doc.page.height - 50,
-          { align: 'center', width: 500 }
-        )
-        .text(
-          'This is a computer-generated document. No signature is required.',
-          50,
-          doc.page.height - 35,
-          { align: 'center', width: 500 }
-        )
-        .text(
-          `Generated on ${format(new Date(), 'MMM dd, yyyy HH:mm:ss')}`,
-          50,
-          doc.page.height - 20,
-          { align: 'center', width: 500 }
-        );
+        doc.pipe(stream);
 
-      // Page number
-      doc
-        .text(
-          `Page ${i + 1} of ${pageCount}`,
-          50,
-          doc.page.height - 20,
-          { align: 'right', width: 500 }
-        );
-    }
+        // Header
+        doc.fontSize(24).text('CONTRACT', { align: 'center' });
+        doc.moveDown();
+        doc.fontSize(12).text(`Contract #: ${contract.contractNumber || 'N/A'}`, { align: 'right' });
+        doc.text(`Title: ${contract.title}`, { align: 'right' });
+        doc.text(`Start Date: ${format(new Date(contract.startDate), 'MMM dd, yyyy')}`, { align: 'right' });
+        doc.text(`End Date: ${format(new Date(contract.endDate), 'MMM dd, yyyy')}`, { align: 'right' });
+        doc.moveDown();
+
+        // Client Information
+        if (contract.client) {
+          doc.fontSize(14).text('Client Information:', { underline: true });
+          doc.fontSize(12).text(contract.client.name);
+          if (contract.client.email) doc.text(`Email: ${contract.client.email}`);
+          if (contract.client.phone) doc.text(`Phone: ${contract.client.phone}`);
+          if (contract.client.address) doc.text(`Address: ${contract.client.address}`);
+          doc.moveDown();
+        }
+
+        // Contract Details
+        doc.fontSize(14).text('Contract Details:', { underline: true });
+        doc.fontSize(12).text(`Status: ${contract.status}`);
+        doc.text(`Payment Terms: ${contract.paymentTerms}`);
+        doc.text(`Currency: ${contract.currency}`);
+        doc.text(`Billing Cycle: ${contract.billingCycle}`);
+        doc.text(`Auto Renew: ${contract.autoRenew ? 'Yes' : 'No'}`);
+        if (contract.autoRenew) {
+          doc.text(`Renewal Term: ${contract.renewalTerm} months`);
+        }
+        doc.moveDown();
+
+        // Items Table
+        doc.fontSize(14).text('Services/Products:', { underline: true });
+        doc.moveDown();
+
+        // Table headers
+        const tableTop = doc.y;
+        doc.fontSize(10);
+        doc.text('Item', 50, tableTop);
+        doc.text('Quantity', 200, tableTop);
+        doc.text('Unit Price', 300, tableTop);
+        doc.text('Total', 400, tableTop);
+
+        // Table content
+        let currentY = tableTop + 20;
+        contract.products.forEach((item, index) => {
+          const productName = item.product?.name || 'Unknown Product';
+          const quantity = item.quantity || 0;
+          const unitPrice = item.unitPrice || item.product?.price || 0;
+          const total = quantity * unitPrice;
+
+          doc.text(productName, 50, currentY);
+          doc.text(quantity.toString(), 200, currentY);
+          doc.text(`$${unitPrice.toFixed(2)}`, 300, currentY);
+          doc.text(`$${total.toFixed(2)}`, 400, currentY);
+
+          currentY += 20;
+        });
+
+        // Totals
+        doc.moveDown(2);
+        doc.text(`Subtotal: $${contract.subtotal?.toFixed(2) || '0.00'}`, { align: 'right' });
+        doc.text(`Tax: $${contract.tax?.toFixed(2) || '0.00'}`, { align: 'right' });
+        doc.fontSize(14).text(`Total: $${contract.totalAmount?.toFixed(2) || '0.00'}`, { align: 'right' });
+
+        // Description
+        if (contract.description) {
+          doc.moveDown(2);
+          doc.fontSize(12).text('Description:', { underline: true });
+          doc.fontSize(10).text(contract.description);
+        }
+
+        // Terms
+        if (contract.terms) {
+          doc.moveDown(2);
+          doc.fontSize(12).text('Terms and Conditions:', { underline: true });
+          doc.fontSize(10).text(contract.terms);
+        }
+
+        // Notes
+        if (contract.notes) {
+          doc.moveDown(2);
+          doc.fontSize(12).text('Additional Notes:', { underline: true });
+          doc.fontSize(10).text(contract.notes);
+        }
+
+        doc.end();
+
+        stream.on('finish', () => {
+          resolve(filepath);
+        });
+
+        stream.on('error', reject);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  async generateContractPDFBuffer(contract) {
+    return new Promise((resolve, reject) => {
+      try {
+        const doc = new PDFDocument({ margin: 50 });
+        const chunks = [];
+
+        doc.on('data', chunk => chunks.push(chunk));
+        doc.on('end', () => resolve(Buffer.concat(chunks)));
+
+        // Header
+        doc.fontSize(24).text('CONTRACT', { align: 'center' });
+        doc.moveDown();
+        doc.fontSize(12).text(`Contract #: ${contract.contractNumber || 'N/A'}`, { align: 'right' });
+        doc.text(`Title: ${contract.title}`, { align: 'right' });
+        doc.text(`Start Date: ${format(new Date(contract.startDate), 'MMM dd, yyyy')}`, { align: 'right' });
+        doc.text(`End Date: ${format(new Date(contract.endDate), 'MMM dd, yyyy')}`, { align: 'right' });
+        doc.moveDown();
+
+        // Client Information
+        if (contract.client) {
+          doc.fontSize(14).text('Client Information:', { underline: true });
+          doc.fontSize(12).text(contract.client.name);
+          if (contract.client.email) doc.text(`Email: ${contract.client.email}`);
+          if (contract.client.phone) doc.text(`Phone: ${contract.client.phone}`);
+          if (contract.client.address) doc.text(`Address: ${contract.client.address}`);
+          doc.moveDown();
+        }
+
+        // Contract Details
+        doc.fontSize(14).text('Contract Details:', { underline: true });
+        doc.fontSize(12).text(`Status: ${contract.status}`);
+        doc.text(`Payment Terms: ${contract.paymentTerms}`);
+        doc.text(`Currency: ${contract.currency}`);
+        doc.text(`Billing Cycle: ${contract.billingCycle}`);
+        doc.text(`Auto Renew: ${contract.autoRenew ? 'Yes' : 'No'}`);
+        if (contract.autoRenew) {
+          doc.text(`Renewal Term: ${contract.renewalTerm} months`);
+        }
+        doc.moveDown();
+
+        // Items Table
+        doc.fontSize(14).text('Services/Products:', { underline: true });
+        doc.moveDown();
+
+        // Table headers
+        const tableTop = doc.y;
+        doc.fontSize(10);
+        doc.text('Item', 50, tableTop);
+        doc.text('Quantity', 200, tableTop);
+        doc.text('Unit Price', 300, tableTop);
+        doc.text('Total', 400, tableTop);
+
+        // Table content
+        let currentY = tableTop + 20;
+        contract.products.forEach((item, index) => {
+          const productName = item.product?.name || 'Unknown Product';
+          const quantity = item.quantity || 0;
+          const unitPrice = item.unitPrice || item.product?.price || 0;
+          const total = quantity * unitPrice;
+
+          doc.text(productName, 50, currentY);
+          doc.text(quantity.toString(), 200, currentY);
+          doc.text(`$${unitPrice.toFixed(2)}`, 300, currentY);
+          doc.text(`$${total.toFixed(2)}`, 400, currentY);
+
+          currentY += 20;
+        });
+
+        // Totals
+        doc.moveDown(2);
+        doc.text(`Subtotal: $${contract.subtotal?.toFixed(2) || '0.00'}`, { align: 'right' });
+        doc.text(`Tax: $${contract.tax?.toFixed(2) || '0.00'}`, { align: 'right' });
+        doc.fontSize(14).text(`Total: $${contract.totalAmount?.toFixed(2) || '0.00'}`, { align: 'right' });
+
+        // Description
+        if (contract.description) {
+          doc.moveDown(2);
+          doc.fontSize(12).text('Description:', { underline: true });
+          doc.fontSize(10).text(contract.description);
+        }
+
+        // Terms
+        if (contract.terms) {
+          doc.moveDown(2);
+          doc.fontSize(12).text('Terms and Conditions:', { underline: true });
+          doc.fontSize(10).text(contract.terms);
+        }
+
+        // Notes
+        if (contract.notes) {
+          doc.moveDown(2);
+          doc.fontSize(12).text('Additional Notes:', { underline: true });
+          doc.fontSize(10).text(contract.notes);
+        }
+
+        doc.end();
+      } catch (error) {
+        reject(error);
+      }
+    });
   }
 }
 
