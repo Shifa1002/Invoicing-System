@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { toast } from 'react-toastify'; // Optional, for better UX
+import { toast } from 'react-toastify'; 
 
 // Safer fallback — throw error if not set
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
