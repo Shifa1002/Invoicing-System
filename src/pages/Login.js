@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { authApi } from '../services/api';
 import './Login.css';
 
 const Login = () => {
@@ -9,6 +9,7 @@ const Login = () => {
     password: ''
   });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -20,12 +21,24 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError('');
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/login', formData);
-      localStorage.setItem('token', response.data.token);
-      navigate('/products');
+      const data = await authApi.login(formData);
+      
+      if (data.token) {
+        // ✅ Store token in localStorage
+        localStorage.setItem('token', data.token);
+
+        // ✅ Navigate to protected route
+        navigate('/dashboard');
+      } else {
+        setError('Login failed. Please try again.');
+      }
     } catch (err) {
-      setError(err.response?.data?.message || 'An error occurred during login');
+      setError(err.response?.data?.message || 'Invalid email or password');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -34,9 +47,7 @@ const Login = () => {
       <div className="login-box">
         <h2>Welcome Back</h2>
         <p className="subtitle">Please sign in to continue</p>
-        
         {error && <div className="error-message">{error}</div>}
-        
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label htmlFor="email">Email</label>
@@ -48,9 +59,10 @@ const Login = () => {
               onChange={handleChange}
               required
               placeholder="Enter your email"
+              autoComplete="email"
+              disabled={loading}
             />
           </div>
-          
           <div className="form-group">
             <label htmlFor="password">Password</label>
             <input
@@ -61,14 +73,14 @@ const Login = () => {
               onChange={handleChange}
               required
               placeholder="Enter your password"
+              autoComplete="current-password"
+              disabled={loading}
             />
           </div>
-          
-          <button type="submit" className="login-button">
-            Sign In
+          <button type="submit" className="login-button" disabled={loading}>
+            {loading ? 'Signing In...' : 'Sign In'}
           </button>
         </form>
-        
         <p className="register-link">
           Don't have an account? <a href="/register">Register here</a>
         </p>
@@ -77,4 +89,4 @@ const Login = () => {
   );
 };
 
-export default Login; 
+export default Login;

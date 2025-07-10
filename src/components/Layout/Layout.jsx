@@ -103,7 +103,8 @@ const Layout = ({ children }) => {
   };
 
   const handleLogout = () => {
-    // Add logout logic here
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
     handleClose();
     navigate('/login');
   };

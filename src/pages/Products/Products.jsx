@@ -1,28 +1,28 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
   Typography,
   Paper,
-  IconButton,
-  Grid,
-  MenuItem,
-  CircularProgress,
-  Alert,
   Snackbar,
+  Alert,
+  Chip
 } from '@mui/material';
-import { DataGrid } from '@mui/x-data-grid';
+import {
+  DataGrid,
+  GridActionsCellItem,
+} from '@mui/x-data-grid';
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
+  Visibility as ViewIcon,
 } from '@mui/icons-material';
+import { useSnackbar } from 'notistack';
 import { productsApi } from '../../services/api';
+import DataGridToolbar from '../../components/common/DataGridToolbar';
+import FormDialog from '../../components/common/FormDialog';
+import ProductForm from './ProductForm';
 
 const Products = () => {
   const [products, setProducts] = useState([]);
@@ -30,253 +30,218 @@ const Products = () => {
   const [error, setError] = useState(null);
   const [open, setOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    price: '',
-    unit: 'piece',
+  const [searchQuery, setSearchQuery] = useState('');
+  const [paginationModel, setPaginationModel] = useState({
+    page: 0,
+    pageSize: 10,
   });
-
-  const unitOptions = [
-    { value: 'piece', label: 'Piece' },
-    { value: 'hour', label: 'Hour' },
-    { value: 'day', label: 'Day' },
-    { value: 'month', label: 'Month' },
-    { value: 'kg', label: 'Kilogram' },
-    { value: 'meter', label: 'Meter' },
-  ];
+  const { enqueueSnackbar } = useSnackbar();
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalProducts, setTotalProducts] = useState(0);
 
   const columns = [
-    { field: 'name', headerName: 'Product Name', width: 200 },
-    { field: 'description', headerName: 'Description', width: 300 },
+    { field: 'name', headerName: 'Name', flex: 1, minWidth: 200 },
+    { field: 'description', headerName: 'Description', flex: 1, minWidth: 200 },
     {
       field: 'price',
       headerName: 'Price',
-      width: 130,
-      type: 'number',
+      width: 120,
       valueFormatter: (params) => `$${params.value.toFixed(2)}`,
     },
+    { field: 'unit', headerName: 'Unit', width: 100 },
     {
-      field: 'unit',
-      headerName: 'Unit',
-      width: 130,
-      valueGetter: (params) => {
-        const unit = unitOptions.find(u => u.value === params.value);
-        return unit ? unit.label : params.value;
-      },
+      field: 'category',
+      headerName: 'Category',
+      width: 120,
+      renderCell: (params) => (
+        <Chip
+          label={params.value}
+          size="small"
+          color="primary"
+          variant="outlined"
+        />
+      ),
+    },
+    {
+      field: 'taxRate',
+      headerName: 'Tax Rate',
+      width: 100,
+      valueFormatter: (params) => `${params.value}%`,
+    },
+    {
+      field: 'isActive',
+      headerName: 'Status',
+      width: 100,
+      renderCell: (params) => (
+        <Chip
+          label={params.value ? 'Active' : 'Inactive'}
+          size="small"
+          color={params.value ? 'success' : 'default'}
+        />
+      ),
     },
     {
       field: 'actions',
+      type: 'actions',
       headerName: 'Actions',
-      width: 130,
-      renderCell: (params) => (
-        <Box>
-          <IconButton
-            color="primary"
-            onClick={() => handleEdit(params.row)}
-            size="small"
-          >
-            <EditIcon />
-          </IconButton>
-          <IconButton
-            color="error"
-            onClick={() => handleDelete(params.row._id)}
-            size="small"
-          >
-            <DeleteIcon />
-          </IconButton>
-        </Box>
-      ),
+      width: 120,
+      getActions: (params) => [
+        <GridActionsCellItem
+          icon={<ViewIcon />}
+          label="View"
+          onClick={() => handleEdit(params.row)}
+        />,
+        <GridActionsCellItem
+          icon={<EditIcon />}
+          label="Edit"
+          onClick={() => handleEdit(params.row)}
+        />,
+        <GridActionsCellItem
+          icon={<DeleteIcon />}
+          label="Delete"
+          onClick={() => handleDelete(params.row._id)}
+          showInMenu
+        />
+      ],
     },
   ];
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
+      console.log(paginationModel.page);
       setLoading(true);
-      const response = await productsApi.getAll();
-      setProducts(response.data);
+      const response = await productsApi.getAll({
+        page: paginationModel.page + 1,
+        limit: paginationModel.pageSize,
+        search: searchQuery
+      });
+      console.log(response.data);
+      const data = response.data.products || response.data || [];
+      const cleanedProducts = data.filter((product) => product && product._id);
+
+      setProducts(cleanedProducts);
+      setTotalPages(response?.data?.totalPages || 1);
+      setTotalProducts(response?.data?.totalProducts || cleanedProducts.length);
       setError(null);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Error fetching products');
+    } catch (error) {
+      const message = error.response?.data?.message || 'Error fetching products';
+      setError(message);
+      enqueueSnackbar(message, { variant: 'error' });
+      setProducts([]);
+      setTotalPages(0);
+      setTotalProducts(0);
     } finally {
       setLoading(false);
     }
-  };
+  }, [paginationModel, searchQuery, enqueueSnackbar]);
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [fetchProducts]);
 
   const handleClickOpen = () => {
     setOpen(true);
     setEditingProduct(null);
-    setFormData({
-      name: '',
-      description: '',
-      price: '',
-      unit: 'piece',
-    });
+    setError(null);
   };
 
   const handleClose = () => {
     setOpen(false);
     setEditingProduct(null);
+    setError(null);
   };
 
   const handleEdit = (product) => {
     setEditingProduct(product);
-    setFormData({
-      ...product,
-      price: product.price.toString(),
-    });
     setOpen(true);
+    setError(null);
   };
 
   const handleDelete = async (id) => {
-    try {
-      await productsApi.delete(id);
-      fetchProducts();
-      setError(null);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Error deleting product');
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const submitData = {
-        ...formData,
-        price: parseFloat(formData.price),
-      };
-
-      if (editingProduct) {
-        await productsApi.update(editingProduct._id, submitData);
-      } else {
-        await productsApi.create(submitData);
+    if (window.confirm('Are you sure you want to delete this product?')) {
+      try {
+        await productsApi.delete(id);
+        enqueueSnackbar('Product deleted successfully', { variant: 'success' });
+        fetchProducts();
+      } catch (error) {
+        const message = error.response?.data?.message || 'Error deleting product';
+        enqueueSnackbar(message, { variant: 'error' });
       }
-      fetchProducts();
-      handleClose();
-      setError(null);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Error saving product');
     }
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+  const handleSubmit = async (formData) => {
+    try {
+      if (editingProduct) {
+        await productsApi.update(editingProduct._id, formData);
+        enqueueSnackbar('Product updated successfully', { variant: 'success' });
+      } else {
+        await productsApi.create(formData);
+        enqueueSnackbar('Product created successfully', { variant: 'success' });
+      }
+
+      handleClose();
+      fetchProducts();
+    } catch (error) {
+      const message = error.response?.data?.message || 'Error saving product';
+      setError(message);
+      enqueueSnackbar(message, { variant: 'error' });
+    }
   };
 
   return (
-    <Box sx={{ height: '100%', width: '100%', p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-        <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
-          Products
-        </Typography>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Typography variant="h5" component="h1">Products</Typography>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={handleClickOpen}
-          sx={{ borderRadius: 2 }}
         >
           Add Product
         </Button>
       </Box>
 
-      <Paper sx={{ height: 'calc(100vh - 200px)', width: '100%' }}>
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-            <CircularProgress />
-          </Box>
-        ) : (
-          <DataGrid
-            rows={products}
-            columns={columns}
-            pageSize={10}
-            rowsPerPageOptions={[10]}
-            checkboxSelection
-            disableSelectionOnClick
-            getRowId={(row) => row._id}
-            loading={loading}
-          />
-        )}
+      <Paper sx={{ flex: 1, display: 'flex' }}>
+        <DataGrid
+          rows={products}
+          columns={columns}
+          loading={loading}
+          getRowId={(row) => row._id}
+          paginationModel={paginationModel}
+          onPaginationModelChange={setPaginationModel}
+          pageSizeOptions={[10, 25, 50]}
+          slots={{
+            toolbar: () => (
+              <DataGridToolbar
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                onClearSearch={() => setSearchQuery('')}
+              />
+            ),
+          }}
+          sx={{
+            '& .MuiDataGrid-cell:focus': {
+              outline: 'none'
+            }
+          }}
+        />
       </Paper>
 
-      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {editingProduct ? 'Edit Product' : 'Add New Product'}
-        </DialogTitle>
-        <form onSubmit={handleSubmit}>
-          <DialogContent>
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Product Name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  multiline
-                  rows={3}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Price"
-                  name="price"
-                  type="number"
-                  value={formData.price}
-                  onChange={handleChange}
-                  required
-                  InputProps={{
-                    startAdornment: '$',
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  select
-                  fullWidth
-                  label="Unit"
-                  name="unit"
-                  value={formData.unit}
-                  onChange={handleChange}
-                  required
-                >
-                  {unitOptions.map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
-                      {option.label}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-            </Grid>
-          </DialogContent>
-          <DialogActions sx={{ p: 2 }}>
-            <Button onClick={handleClose} variant="outlined">
-              Cancel
-            </Button>
-            <Button type="submit" variant="contained">
-              {editingProduct ? 'Update' : 'Create'}
-            </Button>
-          </DialogActions>
-        </form>
-      </Dialog>
+      <FormDialog
+        open={open}
+        onClose={handleClose}
+        title={editingProduct ? 'Edit Product' : 'Add Product'}
+        onSubmit={() => {}}
+        error={error}
+        hideActions={true}
+      >
+        <ProductForm
+          product={editingProduct}
+          onSubmit={handleSubmit}
+          onCancel={handleClose}
+        />
+      </FormDialog>
 
       <Snackbar
         open={!!error}
@@ -292,4 +257,4 @@ const Products = () => {
   );
 };
 
-export default Products; 
+export default Products;
