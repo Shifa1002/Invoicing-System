@@ -9,6 +9,8 @@ import Contracts from './pages/Contracts/Contracts';
 import Invoices from './pages/Invoices/Invoices';
 import Dashboard from './pages/Dashboard/Dashboard';
 import './App.css';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 function isTokenValid(token) {
   if (!token) return false;
@@ -43,6 +45,7 @@ function App() {
   return (
     <Router>
       <div className="app">
+        <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick pauseOnFocusLoss draggable pauseOnHover />
         <Routes>
           <Route
             path="/login"
