@@ -1,15 +1,16 @@
 {
-  "name": "invoicing-system",
+  "name": "invoicing-system-client",
   "version": "1.0.0",
-  "description": "MERN Stack Invoicing System",
+  "private": true,
+  "description": "MERN Stack Invoicing System - Frontend",
+  "main": "index.js",
   "scripts": {
-    "start": "concurrently \"npm run server\" \"npm run client\"",
-    "server": "cd server && npm start",
-    "client": "cd client && npm start",
-    "dev": "concurrently \"npm run server:dev\" \"npm run client\"",
-    "server:dev": "cd server && npm run dev",
-    "install:all": "npm install && cd server && npm install && cd ../client && npm install",
-    "build": "cd client && npm run build"
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "lint": "eslint src --ext .js,.jsx,.ts,.tsx",
+    "lint:fix": "eslint src --ext .js,.jsx,.ts,.tsx --fix"
   },
   "keywords": [
     "invoicing",
@@ -17,14 +18,12 @@
     "react",
     "node",
     "express",
-    "mongodb"
+    "mongodb",
+    "dashboard",
+    "analytics"
   ],
-  "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "concurrently": "^8.2.2"
-  },
-  "main": "index.js",
+  "author": "Invoice System Team",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Shifa1002/Invoicing-System.git"
@@ -32,8 +31,61 @@
   "bugs": {
     "url": "https://github.com/Shifa1002/Invoicing-System/issues"
   },
-  "homepage": "https://github.com/Shifa1002/Invoicing-System#readme",
+  "homepage": "https://invoicing-system-2025.netlify.app",
   "dependencies": {
-    "json2csv": "^6.0.0-alpha.2"
+    "@date-io/date-fns": "^2.17.0",
+    "@emotion/react": "^11.11.1",
+    "@emotion/styled": "^11.11.0",
+    "@mui/icons-material": "^5.14.19",
+    "@mui/lab": "^5.0.0-alpha.155",
+    "@mui/material": "^5.14.20",
+    "@mui/x-data-grid": "^6.18.2",
+    "@mui/x-date-pickers": "^6.18.2",
+    "@testing-library/jest-dom": "^5.16.5",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0",
+    "ajv": "^6.12.6",
+    "ajv-keywords": "^3.5.2",
+    "axios": "^1.6.2",
+    "date-fns": "^2.30.0",
+    "json2csv": "^6.0.0-alpha.2",
+    "notistack": "^3.0.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.20.1",
+    "react-scripts": "^5.0.1",
+    "react-to-print": "^3.1.1",
+    "react-toastify": "^11.0.5",
+    "web-vitals": "^2.1.4"
+  },
+  "devDependencies": {
+    "@babel/plugin-proposal-optional-chaining": "^7.21.0",
+    "concurrently": "^8.2.2",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.1.0",
+    "prettier": "^3.1.1"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
   }
 }

@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://invoicing-system-mruw.onrender.com/$1"
+    }
+  ]
+}
