@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { toast } from 'react-toastify'; 
 
-// Safer fallback — throw error if not set
+// Fallback — throw error if not set
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 if (!API_BASE_URL) {
   throw new Error('❌ Missing REACT_APP_API_BASE_URL. Please set it in your environment.');
@@ -9,11 +9,13 @@ if (!API_BASE_URL) {
 
 const api = axios.create({
   baseURL: API_BASE_URL,
+  withCredentials: true, 
   headers: {
     'Content-Type': 'application/json',
   },
   timeout: 10000,
 });
+
 
 // Request Interceptor — attach token
 api.interceptors.request.use(
