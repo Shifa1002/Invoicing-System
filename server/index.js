@@ -8,40 +8,37 @@ import mongoose from 'mongoose';
 import nodemailer from 'nodemailer';
 import { initializeSocket } from './config/socket.js';
 
-// Load environment variables early
+// Load environment variables
 dotenv.config();
 
 // Create Express app and HTTP server
 const app = express();
 const server = createServer(app);
 
+// ✅ Define allowed origins
 const allowedOrigins = [
   'https://invoicing-system-2025.netlify.app',
-  'https://invoicing-system.netlify.app',
   'http://localhost:3000',
   'http://localhost:3001',
 ];
 
+// ✅ CORS middleware using 'cors' package (for preflight + credentials support)
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (like Postman or curl)
+    // Allow requests with no origin (like curl or Postman)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    } else {
-      return callback(new Error('Not allowed by CORS'));
-    }
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-// ✅ Handle preflight requests
+// ✅ Handle preflight requests explicitly
 app.options('*', cors());
 
-
-// ✅ Export nodemailer transporter for use in services
+// ✅ Nodemailer setup
 export const mailTransporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -50,26 +47,26 @@ export const mailTransporter = nodemailer.createTransport({
   },
 });
 
-// MongoDB connection
+// ✅ MongoDB connection
 const connectDB = async () => {
   try {
     const conn = await mongoose.connect(process.env.MONGODB_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
+    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
-    console.error(`Error: ${error.message}`);
+    console.error(`❌ MongoDB Error: ${error.message}`);
     process.exit(1);
   }
 };
 
-// Middleware
+// ✅ Middleware
 import { requestLogger, errorLogger } from './middleware/logger.js';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
 import { apiLimiter, authLimiter, cleanup as rateLimitCleanup } from './middleware/rateLimiter.js';
 
-// Routes
+// ✅ Routes
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
@@ -92,16 +89,17 @@ const startServer = async () => {
       },
     },
   }));
+
   app.use(compression());
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
   app.use(requestLogger);
 
-  // Apply rate limiting
+  // ✅ Rate limiters
   app.use('/api/', apiLimiter);
   app.use('/api/auth', authLimiter);
 
-  // Mount routes
+  // ✅ Mount API routes
   app.use('/api/auth', authRoutes);
   app.use('/api/users', userRoutes);
   app.use('/api/dashboard', dashboardRoutes);
@@ -110,7 +108,7 @@ const startServer = async () => {
   app.use('/api/contracts', contractRoutes);
   app.use('/api/invoices', invoiceRoutes);
 
-  // Health check (moved to /api/health for consistency)
+  // ✅ Health check route
   app.get('/api/health', (req, res) => {
     res.status(200).json({
       status: 'ok',
@@ -127,20 +125,19 @@ const startServer = async () => {
     });
   });
 
-  // Error handling
+  // ✅ Error handlers
   app.use(notFound);
   app.use(errorLogger);
   app.use(errorHandler);
 
-  // Start server
-  const PORT = 5000;
-
+  // ✅ Start server
+  const PORT = process.env.PORT || 5000;
   server.listen(PORT, () => {
-    console.log(`✅ Server running in ${process.env.NODE_ENV || 'development'} on port ${PORT}`);
-    console.log(`📈 Health check available at: http://localhost:${PORT}/health`);
+    console.log(`🚀 Server running on port ${PORT} (${process.env.NODE_ENV || 'development'})`);
+    console.log(`📈 Health: http://localhost:${PORT}/api/health`);
   });
 
-  // Cleanup and exit handling
+  // ✅ Cleanup and graceful shutdown
   process.on('unhandledRejection', (err) => {
     console.error('❌ Unhandled Promise Rejection:', err);
     server.close(() => process.exit(1));
@@ -152,11 +149,9 @@ const startServer = async () => {
   });
 
   process.on('SIGTERM', () => {
-    console.log('🛑 SIGTERM received. Cleaning up...');
+    console.log('🛑 SIGTERM received. Shutting down gracefully...');
     rateLimitCleanup();
-    server.close(() => {
-      console.log('✅ Server closed.');
-    });
+    server.close(() => console.log('✅ Server closed.'));
   });
 };
 
