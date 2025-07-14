@@ -48,7 +48,7 @@ api.interceptors.response.use(
 export const authApi = {
   login: async (credentials) => {
     try {
-      const response = await api.post('/auth/login', credentials);
+      const response = await api.post('/api/auth/login', credentials);
       const { token, user } = response.data;
 
       if (token) {
@@ -66,7 +66,7 @@ export const authApi = {
 
   register: async (data) => {
     try {
-      const response = await api.post('/auth/register', data);
+      const response = await api.post('/api/auth/register', data);
       toast.success('Registration successful! You can now log in.');
       return response.data;
     } catch (error) {

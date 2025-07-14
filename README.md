@@ -1,4 +1,4 @@
-# IMPORTANT: Set REACT_APP_API_BASE_URL in Netlify/Render environment variables to your deployed backend URL (e.g., https://your-backend.onrender.com/api)
+# IMPORTANT: Set REACT_APP_API_BASE_URL in Netlify/Render environment variables to your deployed backend URL (e.g., https://your-backend.onrender.com)
 
 # Invoicing System
 
