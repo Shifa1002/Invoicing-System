@@ -1,6 +1,6 @@
 import express from 'express';
 import { body } from 'express-validator';
-import { protect } from '../middleware/authMiddleware.js';
+import verifyToken from '../middleware/authMiddleware.js';
 import {
   getProducts,
   createProduct,
@@ -40,7 +40,7 @@ const router = express.Router();
  *       500:
  *         description: Server error
  */
-router.get('/', protect, getProducts);
+router.get('/', verifyToken, getProducts);
 
 /**
  * @swagger
@@ -65,7 +65,7 @@ router.get('/', protect, getProducts);
  *       404:
  *         description: Product not found
  */
-router.get('/:id', protect, async (req, res) => {
+router.get('/:id', verifyToken, async (req, res) => {
   // This route is not implemented in the controller, so keep inline or implement in controller if needed
   try {
     const product = await Product.findById(req.params.id);
@@ -104,7 +104,7 @@ router.get('/:id', protect, async (req, res) => {
  *       401:
  *         description: Unauthorized
  */
-router.post('/', protect, [
+router.post('/', verifyToken, [
   body('name').trim().notEmpty().withMessage('Name is required'),
   body('price').isNumeric().withMessage('Price must be a number'),
   body('unit').isIn(['piece', 'hour', 'day', 'month', 'kg', 'meter'])
@@ -146,7 +146,7 @@ router.post('/', protect, [
  *       404:
  *         description: Product not found
  */
-router.put('/:id', protect, [
+router.put('/:id', verifyToken, [
   body('name').optional().trim().notEmpty().withMessage('Name cannot be empty'),
   body('price').optional().isNumeric().withMessage('Price must be a number'),
   body('unit').optional().isIn(['piece', 'hour', 'day', 'month', 'kg', 'meter'])
@@ -176,6 +176,6 @@ router.put('/:id', protect, [
  *       404:
  *         description: Product not found
  */
-router.delete('/:id', protect, deleteProduct);
+router.delete('/:id', verifyToken, deleteProduct);
 
 export default router; 

@@ -35,8 +35,12 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-// ✅ Handle preflight requests explicitly
-app.options('*', cors());
+app.use((err, req, res, next) => {
+  if (err && err.message && err.message.includes('CORS')) {
+    return res.status(401).json({ message: err.message });
+  }
+  next(err);
+});
 
 // ✅ Nodemailer setup
 export const mailTransporter = nodemailer.createTransport({

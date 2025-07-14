@@ -9,12 +9,12 @@ import {
   exportInvoicePDF,
   sendInvoiceEmail
 } from '../controllers/invoiceController.js';
-import { protect } from '../middleware/authMiddleware.js';
+import verifyToken from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
 // Apply authentication middleware to all routes
-router.use(protect);
+router.use(verifyToken);
 
 // CRUD operations
 router.get('/', getInvoices);

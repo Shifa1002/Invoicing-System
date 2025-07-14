@@ -1,5 +1,5 @@
 import express from 'express';
-import { protect } from '../middleware/authMiddleware.js';
+import verifyToken from '../middleware/authMiddleware.js';
 import {
   getClients,
   createClient,
@@ -38,7 +38,7 @@ const router = express.Router();
  *       500:
  *         description: Server error
  */
-router.get('/', protect, getClients);
+router.get('/', verifyToken, getClients);
 
 /**
  * @swagger
@@ -66,7 +66,7 @@ router.get('/', protect, getClients);
  *       401:
  *         description: Unauthorized
  */
-router.post('/', protect, createClient);
+router.post('/', verifyToken, createClient);
 
 /**
  * @swagger
@@ -103,7 +103,7 @@ router.post('/', protect, createClient);
  *       404:
  *         description: Client not found
  */
-router.put('/:id', protect, updateClient);
+router.put('/:id', verifyToken, updateClient);
 
 /**
  * @swagger
@@ -128,6 +128,6 @@ router.put('/:id', protect, updateClient);
  *       404:
  *         description: Client not found
  */
-router.delete('/:id', protect, deleteClient);
+router.delete('/:id', verifyToken, deleteClient);
 
 export default router; 
