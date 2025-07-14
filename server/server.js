@@ -32,10 +32,9 @@ const __dirname = dirname(__filename);
 app.use(helmet());
 app.use(compression());
 app.use(cors({
-  origin: 'https://invoicing-system-2025.netlify.app', 
+  origin: ['https://invoicing-system-2025.netlify.app', 'http://localhost:3000'],
   credentials: true,
 }));
-;
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -53,6 +52,13 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV,
     mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    version: process.env.npm_package_version,
+    node: process.version,
+    server: process.env.SERVER.url,
+    port: process.env.PORT,
+    database: process.env.MONGODB_URI,
+    process: process.env.npm_package_version,
+    node_version: process.version,
   });
 });
 
