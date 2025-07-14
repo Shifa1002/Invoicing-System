@@ -6,7 +6,7 @@ import compression from 'compression';
 import { createServer } from 'http';
 import mongoose from 'mongoose';
 import nodemailer from 'nodemailer';
-import { initializeSocket } from './config/socket.js';
+//import { initializeSocket } from './config/socket.js';
 
 // Load environment variables
 dotenv.config();
@@ -15,17 +15,13 @@ dotenv.config();
 const app = express();
 const server = createServer(app);
 
-// ✅ Define allowed origins
-const allowedOrigins = [
-  'https://invoicing-system-2025.netlify.app',
+const allowedOrigins = process.env.CORS_WHITELIST ? process.env.CORS_WHITELIST.split(',') : [
   'http://localhost:3000',
   'http://localhost:3001',
 ];
 
-// ✅ CORS middleware using 'cors' package (for preflight + credentials support)
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (like curl or Postman)
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
     return callback(new Error('Not allowed by CORS'));
@@ -34,6 +30,8 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
+
+app.options('*', cors());
 
 app.use((err, req, res, next) => {
   if (err && err.message && err.message.includes('CORS')) {
@@ -81,7 +79,7 @@ import invoiceRoutes from './routes/invoiceRoutes.js';
 
 const startServer = async () => {
   await connectDB();
-  initializeSocket(server);
+  // initializeSocket(server); // Remove this line
 
   app.use(helmet({
     contentSecurityPolicy: {
