@@ -1,14 +1,52 @@
 import express from 'express';
-const router = express.Router();
-
 import Invoice from '../models/Invoice.js';
-import verifyToken from '../middleware/swagger.js';
+import authMiddleware from '../middleware/authMiddleware.js';
+
+const router = express.Router();
 
 /**
  * @swagger
  * tags:
  *   name: Invoices
  *   description: Invoice management
+ */
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     InvoiceItem:
+ *       type: object
+ *       properties:
+ *         description:
+ *           type: string
+ *         quantity:
+ *           type: number
+ *         price:
+ *           type: number
+ *     Invoice:
+ *       type: object
+ *       required:
+ *         - client
+ *         - items
+ *         - totalAmount
+ *         - dueDate
+ *       properties:
+ *         client:
+ *           type: string
+ *           description: MongoDB ObjectId of the client
+ *         items:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/InvoiceItem'
+ *         totalAmount:
+ *           type: number
+ *         dueDate:
+ *           type: string
+ *           format: date
+ *         status:
+ *           type: string
+ *           enum: [Draft, Sent, Paid]
  */
 
 /**
@@ -24,35 +62,14 @@ import verifyToken from '../middleware/swagger.js';
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             properties:
- *               invoiceId:
- *                 type: string
- *               clientName:
- *                 type: string
- *               items:
- *                 type: array
- *                 items:
- *                   type: object
- *                   properties:
- *                     description:
- *                       type: string
- *                     quantity:
- *                       type: number
- *                     price:
- *                       type: number
- *               total:
- *                 type: number
- *               date:
- *                 type: string
- *                 format: date
+ *             $ref: '#/components/schemas/Invoice'
  *     responses:
  *       201:
  *         description: Invoice created successfully
  *       500:
  *         description: Server error
  */
-router.post('/', verifyToken, async (req, res) => {
+router.post('/', authMiddleware, async (req, res) => {
   try {
     const newInvoice = new Invoice(req.body);
     await newInvoice.save();
@@ -82,9 +99,9 @@ router.post('/', verifyToken, async (req, res) => {
  *       500:
  *         description: Server error
  */
-router.get('/', verifyToken, async (req, res) => {
+router.get('/', authMiddleware, async (req, res) => {
   try {
-    const invoices = await Invoice.find();
+    const invoices = await Invoice.find().populate('client user');
     res.json(invoices);
   } catch (err) {
     res.status(500).json({ error: err.message });

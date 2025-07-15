@@ -1,13 +1,18 @@
+// server/index.js
 import express from 'express';
-import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import cors from 'cors';
 
-import InvoiceRoutes from './routes/invoiceRoutes.js';
-import UserRoutes from './routes/userRoutes.js';
-import AuthRoutes from './routes/authRoutes.js';
+import invoiceRoutes from './routes/invoiceRoutes.js';
+import userRoutes from './routes/userRoutes.js';
+import authRoutes from './routes/authRoutes.js';
 import productRoutes from './routes/productRoutes.js';
+import clientRoutes from './routes/clientRoutes.js';
+import contractRoutes from './routes/contractRoutes.js';
+import dashboardRoutes from './routes/dashboardRoutes.js';
+import paymentRoutes from './routes/paymentRoutes.js';
+
 import setupSwagger from './middleware/swagger.js';
 
 dotenv.config();
@@ -15,16 +20,16 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ✅ CORS Configuration
-const corsOptions = {
-  origin: 'https://invoicing-system-2025.netlify.app', 
+// ✅ CORS Configuration for frontend (Netlify)
+app.use(cors({
+  origin: 'https://invoicing-system-2025.netlify.app',
   credentials: true,
-};
+}));
 
-app.use(cors(corsOptions)); //custom CORS config
-app.use(bodyParser.json());
+// ✅ JSON Middleware
+app.use(express.json());
 
-// Connect to MongoDB
+// ✅ MongoDB Connection
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -32,21 +37,25 @@ mongoose.connect(process.env.MONGO_URI, {
 .then(() => console.log('✅ MongoDB connected'))
 .catch((err) => console.error('❌ MongoDB connection error:', err));
 
-// Swagger 
+// ✅ Swagger Docs
 setupSwagger(app);
 
-// Routes
-app.use('/api/invoices', InvoiceRoutes);
-app.use('/api/auth', AuthRoutes);
-app.use('/api/user', UserRoutes);
+// ✅ API Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/user', userRoutes);
+app.use('/api/invoices', invoiceRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/clients', clientRoutes);
+app.use('/api/contracts', contractRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/payments', paymentRoutes);
 
-// Root
+// ✅ Root Endpoint
 app.get('/', (req, res) => {
-  res.send('Invoicing System Backend is running');
+  res.send('🧾 Invoicing System Backend is running 🚀');
 });
 
-// Server
+// ✅ Server Start
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🚀 Server listening on http://localhost:${PORT}`);
 });
