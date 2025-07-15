@@ -1,4 +1,5 @@
 import express from 'express';
+import authMiddleware from '../middleware/authMiddleware.js';
 import {
   createProduct,
   getProducts,
@@ -8,9 +9,10 @@ import {
 
 const router = express.Router();
 
-router.post('/', createProduct);
-router.get('/', getProducts);
-router.put('/:id', updateProduct);
-router.delete('/:id', deleteProduct);
+// All routes protected by JWT
+router.post('/', authMiddleware, createProduct);
+router.get('/', authMiddleware, getProducts);
+router.put('/:id', authMiddleware, updateProduct);
+router.delete('/:id', authMiddleware, deleteProduct);
 
 export default router;

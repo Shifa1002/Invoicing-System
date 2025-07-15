@@ -1,4 +1,3 @@
-// index.js
 import express from 'express';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
@@ -11,14 +10,18 @@ import AuthRoutes from './routes/authRoutes.js';
 import productRoutes from './routes/productRoutes.js';
 import setupSwagger from './middleware/swagger.js';
 
-
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
-app.use(cors());
+// ✅ CORS Configuration
+const corsOptions = {
+  origin: 'https://invoicing-system-2025.netlify.app', 
+  credentials: true,
+};
+
+app.use(cors(corsOptions)); //custom CORS config
 app.use(bodyParser.json());
 
 // Connect to MongoDB
@@ -30,7 +33,7 @@ mongoose.connect(process.env.MONGO_URI, {
 .catch((err) => console.error('❌ MongoDB connection error:', err));
 
 // Swagger 
-setupSwagger(app); 
+setupSwagger(app);
 
 // Routes
 app.use('/api/invoices', InvoiceRoutes);

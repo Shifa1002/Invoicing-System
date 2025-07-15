@@ -1,8 +1,14 @@
-
 import express from 'express';
-import { register, login } from '../controllers/authController.js'; 
+import { register, login } from '../controllers/authController.js';
 
 const router = express.Router();
+
+/**
+ * @swagger
+ * tags:
+ *   name: Auth
+ *   description: User authentication
+ */
 
 /**
  * @swagger
@@ -17,19 +23,20 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             required:
- *               - name
  *               - email
  *               - password
  *             properties:
- *               name:
- *                 type: string
  *               email:
  *                 type: string
  *               password:
  *                 type: string
  *     responses:
- *       200:
+ *       201:
  *         description: User registered successfully
+ *       400:
+ *         description: User already exists
+ *       500:
+ *         description: Server error
  */
 router.post('/register', register);
 
@@ -56,6 +63,10 @@ router.post('/register', register);
  *     responses:
  *       200:
  *         description: User logged in successfully
+ *       401:
+ *         description: Invalid email or password
+ *       500:
+ *         description: Server error
  */
 router.post('/login', login);
 
