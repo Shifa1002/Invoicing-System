@@ -6,6 +6,8 @@ import compression from 'compression';
 import { createServer } from 'http';
 import mongoose from 'mongoose';
 import nodemailer from 'nodemailer';
+import swaggerJsdoc from 'swagger-jsdoc';
+import swaggerUi from 'swagger-ui-express';
 //import { initializeSocket } from './config/socket.js';
 
 // Load environment variables
@@ -72,6 +74,37 @@ import productRoutes from './routes/productRoutes.js';
 import clientRoutes from './routes/clientsRoutes.js';
 import contractRoutes from './routes/contractRoutes.js';
 import invoiceRoutes from './routes/invoiceRoutes.js';
+
+// Swagger/OpenAPI setup
+const swaggerOptions = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'Invoicing System API',
+      version: '1.0.0',
+      description: 'API documentation for the Invoicing System',
+    },
+    servers: [
+      {
+        url: 'http://localhost:5000',
+        description: 'Development server',
+      },
+    ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+        },
+      },
+    },
+    security: [{ bearerAuth: [] }],
+  },
+  apis: ['./routes/**/*.js', './models/**/*.js'], // scan all subfolders
+};
+const swaggerSpec = swaggerJsdoc(swaggerOptions);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 const startServer = async () => {
   await connectDB();
