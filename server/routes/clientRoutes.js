@@ -46,4 +46,4 @@ router.post('/', authMiddleware, async (req, res) => {
   res.status(201).json(client);
 });
 
-export default router;
+export default router; 
