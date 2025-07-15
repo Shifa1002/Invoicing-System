@@ -21,23 +21,8 @@ const allowedOrigins = [
   'http://localhost:3001',
 ];
 
-// CORS must be the first middleware
+// SINGLE, TOP-LEVEL CORS MIDDLEWARE ONLY
 app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, origin); // send back the actual origin, not '*'
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  exposedHeaders: ['Content-Disposition'],
-}));
-
-// Explicitly handle preflight requests
-app.options('*', cors({
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, origin);
@@ -50,13 +35,6 @@ app.options('*', cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
   exposedHeaders: ['Content-Disposition'],
 }));
-
-app.use((err, req, res, next) => {
-  if (err && err.message && err.message.includes('CORS')) {
-    return res.status(401).json({ message: err.message });
-  }
-  next(err);
-});
 
 // ✅ Nodemailer setup
 export const mailTransporter = nodemailer.createTransport({
@@ -127,6 +105,16 @@ const startServer = async () => {
   app.use('/api/clients', clientRoutes);
   app.use('/api/contracts', contractRoutes);
   app.use('/api/invoices', invoiceRoutes);
+
+  // CORS debug endpoint
+  app.get('/api/cors-test', (req, res) => {
+    res.json({
+      message: 'CORS debug',
+      allowedOrigins,
+      nodeEnv: process.env.NODE_ENV,
+      requestOrigin: req.headers.origin,
+    });
+  });
 
   // ✅ Health check route
   app.get('/api/health', (req, res) => {
