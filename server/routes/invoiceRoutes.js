@@ -1,6 +1,8 @@
 import express from 'express';
 import Invoice from '../models/Invoice.js';
 import authMiddleware from '../middleware/authMiddleware.js';
+import PDFDocument from 'pdfkit';
+import { Readable } from 'stream';
 
 const router = express.Router();
 
@@ -105,6 +107,57 @@ router.get('/', authMiddleware, async (req, res) => {
     res.json(invoices);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// Update invoice
+router.put('/:id', authMiddleware, async (req, res) => {
+  try {
+    const invoice = await Invoice.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!invoice) return res.status(404).json({ message: 'Invoice not found' });
+    res.json(invoice);
+  } catch (err) {
+    res.status(500).json({ message: 'Error updating invoice', error: err });
+  }
+});
+
+// Delete invoice
+router.delete('/:id', authMiddleware, async (req, res) => {
+  try {
+    const invoice = await Invoice.findByIdAndDelete(req.params.id);
+    if (!invoice) return res.status(404).json({ message: 'Invoice not found' });
+    res.json({ message: 'Invoice deleted' });
+  } catch (err) {
+    res.status(500).json({ message: 'Error deleting invoice', error: err });
+  }
+});
+
+// Download invoice as PDF
+router.get('/:id/pdf', authMiddleware, async (req, res) => {
+  try {
+    const invoice = await Invoice.findById(req.params.id).populate('client');
+    if (!invoice) return res.status(404).json({ message: 'Invoice not found' });
+    const doc = new PDFDocument();
+    let buffers = [];
+    doc.on('data', buffers.push.bind(buffers));
+    doc.on('end', () => {
+      let pdfData = Buffer.concat(buffers);
+      res.writeHead(200, {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename=invoice-${invoice._id}.pdf`,
+        'Content-Length': pdfData.length
+      });
+      res.end(pdfData);
+    });
+    doc.fontSize(20).text('Invoice', { align: 'center' });
+    doc.moveDown();
+    doc.fontSize(12).text(`Invoice ID: ${invoice._id}`);
+    doc.text(`Client: ${invoice.client?.name || ''}`);
+    doc.text(`Total Amount: $${invoice.totalAmount}`);
+    doc.text(`Due Date: ${invoice.dueDate}`);
+    doc.end();
+  } catch (err) {
+    res.status(500).json({ message: 'Error generating PDF', error: err });
   }
 });
 

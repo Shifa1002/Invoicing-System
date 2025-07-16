@@ -46,4 +46,26 @@ router.post('/', authMiddleware, async (req, res) => {
   res.status(201).json(client);
 });
 
+// Update client
+router.put('/:id', authMiddleware, async (req, res) => {
+  try {
+    const client = await Client.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!client) return res.status(404).json({ message: 'Client not found' });
+    res.json(client);
+  } catch (err) {
+    res.status(500).json({ message: 'Error updating client', error: err });
+  }
+});
+
+// Delete client
+router.delete('/:id', authMiddleware, async (req, res) => {
+  try {
+    const client = await Client.findByIdAndDelete(req.params.id);
+    if (!client) return res.status(404).json({ message: 'Client not found' });
+    res.json({ message: 'Client deleted' });
+  } catch (err) {
+    res.status(500).json({ message: 'Error deleting client', error: err });
+  }
+});
+
 export default router; 

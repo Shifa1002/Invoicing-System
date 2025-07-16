@@ -9,8 +9,18 @@ const clientSchema = new mongoose.Schema({
   },
   email: String,
   phone: String,
-  address: String,
-  company: String,
+  address: {
+    street: String,
+    city: String,
+    state: String,
+    zipCode: String,
+    country: String,
+  },
+  company: {
+    name: String,
+    taxId: String,
+    website: String,
+  },
   createdAt: {
     type: Date,
     default: Date.now,
